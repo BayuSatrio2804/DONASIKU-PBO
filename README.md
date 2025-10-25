@@ -19,13 +19,6 @@ Tujuan dari proyek ini adalah untuk:
 ---
 
 
-
----
-
-
----
-
-
 ##  Konsep OOP yang Diterapkan  
 - **Encapsulation:** Melindungi data dengan access modifier dan getter-setter.  
 - **Inheritance:** Pewarisan atribut dan method dari superclass ke subclass.  
