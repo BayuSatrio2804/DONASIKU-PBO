@@ -27,7 +27,7 @@ Tujuan dari proyek ini adalah untuk:
 
 ---
 
-## 👨‍💻 Anggota Kelompok  
+##  Anggota Kelompok  
 
 | No | Nama Lengkap | NIM |
 |----|---------------|------|
