@@ -30,10 +30,9 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest request) {
         try {
             User newUser = authService.registerNewUser(request);
-            // Mengembalikan respon sukses 201 Created
+            // Respons yang ideal adalah mengembalikan detail user atau token
             return new ResponseEntity<>("User " + newUser.getUsername() + " berhasil didaftarkan.", HttpStatus.CREATED);
         } catch (RuntimeException e) {
-            // Mengembalikan respon error 400 Bad Request
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
@@ -41,9 +40,15 @@ public class AuthController {
     // Endpoint untuk Login - FR-01
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest request) {
-        // TODO: Implementasi logika login dan JWT
-        // Contoh: return authService.loginUser(request);
-        
-        return ResponseEntity.ok("Login logic will be implemented here (JWT Token).");
+        try {
+            User authenticatedUser = authService.authenticateSimple(request);
+            
+            // TODO: Di sini, Anda harusnya membuat dan mengembalikan JWT Token.
+            // Untuk saat ini, kita kembalikan status sukses sederhana.
+            
+            return ResponseEntity.ok("Login berhasil! Selamat datang, " + authenticatedUser.getUsername() + ".");
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED); // 401 Unauthorized
+        }
     }
 }

@@ -1,23 +1,22 @@
 package Donasiku.spring.core.service;
 
-import java.time.LocalDateTime;
-
+import Donasiku.spring.core.dto.LoginRequest;
+import Donasiku.spring.core.dto.RegisterRequest;
+import Donasiku.spring.core.entity.User;
+import Donasiku.spring.core.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import Donasiku.spring.core.dto.RegisterRequest;
-import Donasiku.spring.core.entity.User;
-import Donasiku.spring.core.repository.UserRepository;
-
-// NOTE: Anda perlu menambahkan dependency Spring Security di pom.xml agar PasswordEncoder berfungsi
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder; // Digunakan untuk hashing password
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
@@ -27,7 +26,7 @@ public class AuthService {
 
     @Transactional
     public User registerNewUser(RegisterRequest request) {
-        // 1. Validasi Keunikan
+        // [Kode registerNewUser sudah ada]
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Username sudah digunakan.");
         }
@@ -35,15 +34,11 @@ public class AuthService {
             throw new RuntimeException("Email sudah terdaftar.");
         }
 
-        // 2. Buat objek User baru
         User newUser = new User();
         newUser.setUsername(request.getUsername());
         newUser.setEmail(request.getEmail());
-        
-        // Hashing password sebelum disimpan ke database
         newUser.setPassword(passwordEncoder.encode(request.getPassword())); 
-        
-        // Set Role dan Status default
+
         try {
             newUser.setRole(User.UserRole.valueOf(request.getRole().toLowerCase()));
         } catch (IllegalArgumentException e) {
@@ -54,10 +49,35 @@ public class AuthService {
         newUser.setCreatedAt(LocalDateTime.now());
         newUser.setUpdatedAt(LocalDateTime.now());
 
-        // 3. Simpan dan kembalikan User yang disimpan
         return userRepository.save(newUser);
     }
-    
-    // TODO: Tambahkan metode loginUser(LoginRequest request) di sini
-    // Metode ini akan menggunakan Spring Security untuk autentikasi dan JWT (nanti)
+
+    /**
+     * Metode untuk memverifikasi kredensial pengguna tanpa JWT/Spring Security penuh.
+     * Digunakan sebagai dasar untuk login.
+     */
+    public User authenticateSimple(LoginRequest request) {
+        // Cari user berdasarkan username/email
+        Optional<User> userOptional = userRepository.findByUsername(request.getUsernameOrEmail());
+        
+        // Jika tidak ditemukan, coba cari berdasarkan email
+        if (userOptional.isEmpty()) {
+            // Karena findByUsernameOrEmail belum ada di UserRepository, kita asumsikan input adalah username untuk saat ini
+            // Jika Anda ingin mendukung login email, Anda harus menambahkan method di UserRepository
+             userOptional = userRepository.findByEmail(request.getUsernameOrEmail()); 
+        }
+
+        if (userOptional.isEmpty()) {
+            throw new RuntimeException("Username atau Email tidak ditemukan.");
+        }
+
+        User user = userOptional.get();
+
+        // Verifikasi password: membandingkan input dengan hash yang tersimpan
+        if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            return user; // Autentikasi berhasil
+        } else {
+            throw new RuntimeException("Password salah.");
+        }
+    }
 }
