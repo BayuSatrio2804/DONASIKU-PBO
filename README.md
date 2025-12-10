@@ -1,6 +1,6 @@
 
 #  Tugas Besar Pemrograman Berorientasi Objek (PBO)  
-### Kelompok: *Maaf Yah Azril Kita Lagi Cari Posisi yang Pas untuk Daftar Kelompok PBO*  
+### Kelompok: *Maaf Yah Azril Kita Lagi Cari Posisi yang Pas untuk Daftar Kelompok PBO :D*  
 
 ---
 
