@@ -23,4 +23,9 @@ public class RegisterRequest {
     // Role dikirim sebagai String, akan dikonversi ke Enum di Service
     @NotBlank(message = "Role harus diisi (donatur atau penerima)")
     private String role;
+
+    // Field tambahan untuk profil pengguna
+    private String nama;
+    private String alamat;
+    private String noTelepon;
 }

@@ -1,16 +1,17 @@
 package Donasiku.spring.core.service;
 
-import Donasiku.spring.core.dto.LoginRequest;
-import Donasiku.spring.core.dto.RegisterRequest;
-import Donasiku.spring.core.entity.User;
-import Donasiku.spring.core.repository.UserRepository;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
+import Donasiku.spring.core.dto.LoginRequest;
+import Donasiku.spring.core.dto.RegisterRequest;
+import Donasiku.spring.core.entity.User;
+import Donasiku.spring.core.repository.UserRepository;
 
 @Service
 public class AuthService {
@@ -37,7 +38,10 @@ public class AuthService {
         User newUser = new User();
         newUser.setUsername(request.getUsername());
         newUser.setEmail(request.getEmail());
-        newUser.setPassword(passwordEncoder.encode(request.getPassword())); 
+        newUser.setPassword(passwordEncoder.encode(request.getPassword()));
+        newUser.setNama(request.getNama() != null ? request.getNama() : request.getUsername());
+        newUser.setAlamat(request.getAlamat());
+        newUser.setNoTelepon(request.getNoTelepon());
 
         try {
             newUser.setRole(User.UserRole.valueOf(request.getRole().toLowerCase()));

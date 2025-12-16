@@ -11,7 +11,7 @@ export default function SignupPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'donatur',
+    role: 'donatur', // Default: donatur
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -48,17 +48,36 @@ export default function SignupPage() {
         return;
       }
 
-      // TODO: Replace with actual API call
-      console.log('Signup attempt:', {
-        username: formData.username,
-        email: formData.email,
-        role: formData.role,
+      // Call API to register
+      const response = await fetch('http://localhost:8080/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+        }),
       });
 
-      // Simulated signup
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Pendaftaran gagal');
+      }
+
+      if (!data.success) {
+        throw new Error(data.message || 'Pendaftaran gagal');
+      }
+
+      console.log('Signup successful:', data);
+      
+      // Redirect ke login page
       setTimeout(() => {
         router.push('/auth/login');
-      }, 500);
+      }, 1000);
     } catch (err) {
       setError('Pendaftaran gagal. Silakan coba lagi.');
       console.error('Signup error:', err);
@@ -152,9 +171,8 @@ export default function SignupPage() {
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all text-black"
               >
-                <option value="">Pilih role</option>
-                <option value="donor">Donatur</option>
-                <option value="recipient">Penerima</option>
+                <option value="donatur">Donatur</option>
+                <option value="penerima">Penerima</option>
               </select>
             </div>
 
