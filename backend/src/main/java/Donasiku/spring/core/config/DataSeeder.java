@@ -1,18 +1,25 @@
 package Donasiku.spring.core.config;
 
-import Donasiku.spring.core.entity.*;
-import Donasiku.spring.core.entity.User.UserRole;
-import Donasiku.spring.core.repository.*;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import Donasiku.spring.core.entity.Donasi;
+import Donasiku.spring.core.entity.Lokasi;
+import Donasiku.spring.core.entity.StatusDonasi;
+import Donasiku.spring.core.entity.User;
+import Donasiku.spring.core.entity.User.UserRole;
+import Donasiku.spring.core.repository.DonasiRepository;
+import Donasiku.spring.core.repository.LokasiRepository;
+import Donasiku.spring.core.repository.StatusDonasiRepository;
+import Donasiku.spring.core.repository.UserRepository;
 
 @Configuration
 public class DataSeeder {
 
-    @Bean
-    CommandLineRunner initDatabase(StatusDonasiRepository statusRepo, 
+    // DISABLED - Database schema issue on startup
+    // @Bean
+    CommandLineRunner initDatabaseDisabled(StatusDonasiRepository statusRepo, 
                                    UserRepository userRepo, 
                                    LokasiRepository lokasiRepo,
                                    DonasiRepository donasiRepo, // Tambah ini

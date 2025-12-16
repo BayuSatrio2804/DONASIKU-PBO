@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import Donasiku.spring.core.dto.AuthResponse;
 import Donasiku.spring.core.dto.LoginRequest;
 import Donasiku.spring.core.dto.RegisterRequest;
 import Donasiku.spring.core.entity.User;
@@ -30,10 +31,27 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest request) {
         try {
             User newUser = authService.registerNewUser(request);
-            // Respons yang ideal adalah mengembalikan detail user atau token
-            return new ResponseEntity<>("User " + newUser.getUsername() + " berhasil didaftarkan.", HttpStatus.CREATED);
+            
+            AuthResponse response = new AuthResponse(
+                true,
+                "User " + newUser.getUsername() + " berhasil didaftarkan.",
+                newUser.getUsername(),
+                newUser.getUserId(),
+                newUser.getEmail(),
+                newUser.getRole().toString()
+            );
+            
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            AuthResponse errorResponse = new AuthResponse(
+                false,
+                e.getMessage(),
+                null,
+                null,
+                null,
+                null
+            );
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         }
     }
 
