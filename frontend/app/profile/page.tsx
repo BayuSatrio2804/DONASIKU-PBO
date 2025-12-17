@@ -8,40 +8,47 @@ import { useRouter } from 'next/navigation';
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<{ username: string, role: string, userId: number } | null>(null);
-  const [isVerified, setIsVerified] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load user data
   // Load user data & Check Status
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const sessionStr = localStorage.getItem('userSession');
-      if (sessionStr) {
-        try {
-          const userData = JSON.parse(sessionStr);
-          setUser(userData);
-          if (userData.userId && userData.role === 'penerima') {
-            checkVerificationStatus(userData.userId);
+    const initializeUser = async () => {
+      if (typeof window !== 'undefined') {
+        const sessionStr = localStorage.getItem('userSession');
+        if (sessionStr) {
+          try {
+            const userData = JSON.parse(sessionStr);
+            setUser(userData);
+            if (userData.userId && userData.role === 'penerima') {
+              await checkVerificationStatus(userData.userId);
+            }
+          } catch (e) {
+            console.error('[ERROR] Initialize user:', e);
           }
-        } catch (e) {
-          console.error(e);
         }
+        setLoading(false);
       }
-    }
+    };
+
+    initializeUser();
   }, []);
 
   const checkVerificationStatus = async (userId: number) => {
     try {
+      console.log(`[DEBUG] Fetching verification status for userId: ${userId}`);
       const res = await fetch(`http://localhost:8080/api/verifikasi/${userId}/status`);
       if (res.ok) {
         const data = await res.json();
-        if (data.status === "Dokumen sudah diupload, menunggu verifikasi" || data.status.includes("Terverifikasi")) {
-          // Basic check: if record exists, we consider it pending/verified for now 
-          // Logic mirrors DetailAkunPage 
-          setIsVerified(true);
-        }
+        console.log('[DEBUG] Verification status response:', data);
+        setVerificationStatus(data.status);
+      } else {
+        console.log('[DEBUG] No verification record found - status 404/not found');
+        setVerificationStatus(null);
       }
     } catch (error) {
-      console.error("Status check failed", error);
+      console.error('[ERROR] Status check failed:', error);
+      setVerificationStatus(null);
     }
   };
 
@@ -86,9 +93,31 @@ export default function ProfilePage() {
                 {user?.username || 'Tamu'}
               </h2>
               {user?.role === 'penerima' && (
-                <div className={`flex items-center gap-1 text-sm mb-3 ${isVerified ? 'text-green-600' : 'text-gray-400'}`}>
-                  <span>{isVerified ? '✓' : '○'}</span>
-                  <span>{isVerified ? 'Menunggu Verifikasi / Terverifikasi' : 'Belum Terverifikasi'}</span>
+                <div className="mb-3">
+                  {verificationStatus === 'terverifikasi' && (
+                    <div className="flex items-center gap-1 text-sm text-green-600 font-semibold">
+                      <span>✓</span>
+                      <span>Terverifikasi</span>
+                    </div>
+                  )}
+                  {verificationStatus === 'menunggu_verifikasi' && (
+                    <div className="flex items-center gap-1 text-sm text-yellow-600 font-semibold">
+                      <span>⏳</span>
+                      <span>Menunggu Verifikasi</span>
+                    </div>
+                  )}
+                  {verificationStatus === 'ditolak' && (
+                    <div className="flex items-center gap-1 text-sm text-red-600 font-semibold">
+                      <span>✗</span>
+                      <span>Ditolak</span>
+                    </div>
+                  )}
+                  {!verificationStatus && (
+                    <div className="flex items-center gap-1 text-sm text-gray-400">
+                      <span>○</span>
+                      <span>Belum Terverifikasi</span>
+                    </div>
+                  )}
                 </div>
               )}
               <button
