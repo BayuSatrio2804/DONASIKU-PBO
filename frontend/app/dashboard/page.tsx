@@ -12,6 +12,8 @@ export default function DashboardPage() {
   const [permintaan, setPermintaan] = useState<any[]>([]);
   const [donasiSaya, setDonasiSaya] = useState<any[]>([]);
   const [allPermintaan, setAllPermintaan] = useState<any[]>([]);
+  const [donasiBersedia, setDonasiBersedia] = useState<any[]>([]);
+  const [donasiPerluDikonfirmasi, setDonasiPerluDikonfirmasi] = useState<any[]>([]);
 
   useEffect(() => {
     // Check auth
@@ -28,6 +30,8 @@ export default function DashboardPage() {
       // Fetch permintaan untuk penerima
       if (userData.role?.toLowerCase() === 'penerima' && userData.userId) {
         fetchPermintaan();
+        fetchDonasiBersedia();
+        fetchDonasiPerluDikonfirmasi(userData.userId);
       }
       
       // Fetch data untuk donatur
@@ -80,6 +84,40 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error('Error fetching all permintaan:', err);
+    }
+  };
+
+  const fetchDonasiBersedia = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/donasi');
+      if (response.ok) {
+        const data = await response.json();
+        // Filter donasi yang tersedia (belum diambil)
+        const availableDonasi = data.filter((donasi: any) => 
+          donasi.statusDonasi?.status === 'Tersedia' || donasi.statusDonasi?.status === 'TERSEDIA'
+        );
+        setDonasiBersedia(availableDonasi);
+      }
+    } catch (err) {
+      console.error('Error fetching donasi bersedia:', err);
+    }
+  };
+
+  const fetchDonasiPerluDikonfirmasi = async (userId: number) => {
+    try {
+      const response = await fetch('http://localhost:8080/api/donasi');
+      if (response.ok) {
+        const data = await response.json();
+        // Filter donasi yang sudah diambil tapi belum dikonfirmasi
+        const needConfirmation = data.filter((donasi: any) =>
+          donasi.penerima?.userId === userId &&
+          (donasi.statusDonasi?.status === 'Pending' || 
+           donasi.statusDonasi?.status === 'PENDING')
+        );
+        setDonasiPerluDikonfirmasi(needConfirmation);
+      }
+    } catch (err) {
+      console.error('Error fetching donasi perlu dikonfirmasi:', err);
     }
   };
 
@@ -179,6 +217,84 @@ export default function DashboardPage() {
             </section>
 
             <section>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-xl text-gray-800">📦 Donasi Tersedia</h3>
+                <Link href="/donasi-tersedia" className="text-primary text-sm font-semibold">Lihat Semua</Link>
+              </div>
+              {donasiBersedia.length === 0 ? (
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
+                    📦
+                  </div>
+                  <p className="font-medium text-gray-900">Belum ada donasi tersedia</p>
+                  <p className="text-sm text-gray-500 mt-2">Donasi dari para donatur akan tampil di sini.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {donasiBersedia.slice(0, 3).map((item: any) => (
+                    <Link key={item.donasiId} href={`/detail-donasi/${item.donasiId}`}>
+                      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-gray-900">{item.namaBarang || item.kategori || 'Donasi'}</h4>
+                            <p className="text-xs text-gray-500 mt-1">👤 {item.donatur?.username || 'Donatur'}</p>
+                            <p className="text-xs text-gray-500">📍 {item.lokasi?.alamatLengkap || item.lokasi || 'Lokasi tidak tersedia'}</p>
+                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsi}</p>
+                            <div className="flex gap-2 mt-3">
+                              <span className="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-semibold">
+                                ✓ Tersedia
+                              </span>
+                              <span className="inline-block text-gray-500 text-xs">
+                                📅 {new Date(item.createdAt).toLocaleDateString('id-ID')}
+                              </span>
+                            </div>
+                          </div>
+                          <button className="text-gray-400 hover:text-gray-600 text-xl">→</button>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-xl text-gray-800">✋ Perlu Dikonfirmasi</h3>
+                <Link href="/riwayat-donasi-diterima" className="text-primary text-sm font-semibold">Lihat Semua</Link>
+              </div>
+              {donasiPerluDikonfirmasi.length === 0 ? (
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
+                    ✓
+                  </div>
+                  <p className="font-medium text-gray-900">Semua donasi sudah dikonfirmasi</p>
+                  <p className="text-sm text-gray-500 mt-2">Tidak ada donasi yang perlu dikonfirmasi.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {donasiPerluDikonfirmasi.slice(0, 3).map((item: any) => (
+                    <Link key={item.donasiId} href={`/konfirmasi-donasi/${item.donasiId}`}>
+                      <div className="bg-red-50 border border-red-200 rounded-2xl p-4 hover:shadow-md hover:border-red-400 transition-all cursor-pointer">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-bold text-gray-900">{item.namaBarang || item.kategori}</h4>
+                              <span className="inline-block bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-semibold">
+                                ⏳ Menunggu
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">👤 {item.donatur?.username || 'Donatur'}</p>
+                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsi}</p>
+                          </div>
+                          <button className="text-gray-400 hover:text-gray-600 text-xl ml-2">→</button>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>            <section>
               <h3 className="font-bold text-xl text-gray-800 mb-4">Status Terkini</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
@@ -197,18 +313,20 @@ export default function DashboardPage() {
         {/* DONATUR VIEW SPECIFIC */}
         {!isPenerima && (
           <div className="space-y-6">
-            <button className="w-full bg-white border border-gray-200 rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-primary transition-all group">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                  🤝
+            <Link href="/permintaan-untuk-donasi" className="block">
+              <button className="w-full bg-white border border-gray-200 rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-primary transition-all group">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                    🤝
+                  </div>
+                  <div className="text-left">
+                    <h4 className="font-bold text-gray-900">Salurkan Bantuan</h4>
+                    <p className="text-xs text-gray-500">Lihat permintaan dari yang membutuhkan</p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <h4 className="font-bold text-gray-900">Salurkan Bantuan</h4>
-                  <p className="text-xs text-gray-500">Lihat permintaan dari yang membutuhkan</p>
-                </div>
-              </div>
-              <span className="text-gray-300 group-hover:text-primary transition-colors text-xl">→</span>
-            </button>
+                <span className="text-gray-300 group-hover:text-primary transition-colors text-xl">→</span>
+              </button>
+            </Link>
 
             {/* DONASI SAYA SECTION */}
             <section>
@@ -259,7 +377,7 @@ export default function DashboardPage() {
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-xl text-gray-800">🤲 Permintaan Barang</h3>
-                <Link href="/permintaan" className="text-primary text-sm font-semibold">Lihat Semua</Link>
+                <Link href="/permintaan-untuk-donasi" className="text-primary text-sm font-semibold">Lihat Semua</Link>
               </div>
               {allPermintaan.length === 0 ? (
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">

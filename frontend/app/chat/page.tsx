@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Message {
@@ -16,6 +16,7 @@ interface ChatItem {
   lastMessage: string;
   time: string;
   avatar: string;
+  unread?: number;
   messages?: Message[];
 }
 
@@ -156,7 +157,7 @@ const chatData: ChatItem[] = [
 
 export default function ChatPage() {
   const router = useRouter();
-  const [chats] = useState<ChatItem[]>(chatData);
+  const [chats, setChats] = useState<ChatItem[]>(chatData);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -170,6 +171,8 @@ export default function ChatPage() {
     setSelectedChat(chat);
     setMessages(chat.messages || []);
     setInputText('');
+    // Update unread count
+    setChats(chats.map(c => c.id === chat.id ? { ...c, unread: 0 } : c));
   };
 
   const handleSendMessage = () => {
@@ -183,15 +186,22 @@ export default function ChatPage() {
           minute: '2-digit',
         }),
       };
-      setMessages([...messages, newMessage]);
+      const updatedMessages = [...messages, newMessage];
+      setMessages(updatedMessages);
       setInputText('');
+      
+      // Update chat last message
+      setChats(chats.map(chat => 
+        chat.id === selectedChat.id 
+          ? { ...chat, lastMessage: `You: ${inputText}`, messages: updatedMessages }
+          : chat
+      ));
     }
   };
 
   const handleBackFromChat = () => {
     setSelectedChat(null);
     setMessages([]);
-    setSearchQuery('');
   };
 
   if (selectedChat) {
@@ -290,9 +300,9 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 py-4 px-4 flex items-center gap-4 sticky top-0 z-10">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header - Fixed */}
+      <div className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 py-4 px-4 flex items-center gap-4 z-20">
         <button
           onClick={() => router.back()}
           className="text-2xl text-black hover:bg-gray-100 p-2 rounded-lg transition-colors"
@@ -301,8 +311,8 @@ export default function ChatPage() {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 flex gap-8 px-6 py-4 sticky top-16 z-10">
+      {/* Tabs - Fixed */}
+      <div className="fixed top-16 left-0 right-0 bg-white border-b border-gray-200 flex gap-8 px-6 py-4 z-20">
         <button className="pb-3 font-medium text-gray-600 hover:text-gray-900 transition-colors">
           Riwayat Barang
         </button>
@@ -311,52 +321,57 @@ export default function ChatPage() {
         </button>
       </div>
 
-      {/* Content */}
-      <div className="max-w-2xl mx-auto">
-        {/* Search Bar */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">
-              🔍
-            </span>
-            <input
-              type="text"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-100 rounded-full py-3 pl-12 pr-4 outline-none focus:bg-white focus:border focus:border-gray-300 placeholder-gray-500 text-gray-900"
-            />
-          </div>
+      {/* Search Bar - Fixed */}
+      <div className="fixed top-32 left-0 right-0 bg-white border-b border-gray-200 px-6 py-4 z-20">
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">
+            🔍
+          </span>
+          <input
+            type="text"
+            placeholder="Search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-gray-100 rounded-full py-3 pl-12 pr-4 outline-none focus:bg-white focus:border focus:border-gray-300 placeholder-gray-500 text-gray-900"
+          />
         </div>
+      </div>
 
-        {/* Chat List */}
-        <div className="divide-y divide-gray-200 bg-white">
-          {filteredChats.length > 0 ? (
-            filteredChats.map((chat) => (
-              <button
-                key={chat.id}
-                onClick={() => handleChatClick(chat)}
-                className="w-full text-left px-6 py-4 hover:bg-gray-50 transition-colors flex items-center gap-4"
-              >
+      {/* Chat List - Scrollable */}
+      <div className="mt-48 flex-1 overflow-y-auto bg-white divide-y divide-gray-200">
+        {filteredChats.length > 0 ? (
+          filteredChats.map((chat) => (
+            <button
+              key={chat.id}
+              onClick={() => handleChatClick(chat)}
+              className="w-full text-left px-6 py-4 hover:bg-gray-50 transition-colors flex items-center gap-4 relative"
+            >
+              <div className="relative">
                 <div className="w-12 h-12 rounded-full bg-orange-400 flex items-center justify-center text-xl shrink-0">
                   {chat.avatar}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900">
-                    {chat.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 truncate">
-                    {chat.lastMessage}
-                  </p>
-                </div>
-              </button>
-            ))
-          ) : (
-            <div className="px-6 py-12 text-center text-gray-500">
-              No chats found
-            </div>
-          )}
-        </div>
+                {chat.unread && chat.unread > 0 && (
+                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                    {chat.unread}
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-900">
+                  {chat.name}
+                </h3>
+                <p className="text-sm text-gray-500 truncate">
+                  {chat.lastMessage}
+                </p>
+              </div>
+              <span className="text-xs text-gray-400 ml-2">{chat.time}</span>
+            </button>
+          ))
+        ) : (
+          <div className="px-6 py-12 text-center text-gray-500">
+            Tidak ada chat
+          </div>
+        )}
       </div>
     </div>
   );
