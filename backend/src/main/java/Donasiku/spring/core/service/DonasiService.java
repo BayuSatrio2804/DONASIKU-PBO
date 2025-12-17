@@ -38,6 +38,7 @@ public class DonasiService {
         donasi.setDeskripsi(request.getDeskripsi());
         donasi.setKategori(request.getKategori());
         donasi.setFoto(request.getFoto());
+        donasi.setJumlah(request.getJumlah());
         donasi.setLokasi(lokasi);
         donasi.setDonatur(donatur);
         donasi.setStatusDonasi(statusAwal);

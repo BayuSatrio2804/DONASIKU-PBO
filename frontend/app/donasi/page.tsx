@@ -55,6 +55,7 @@ export default function DashboardDonasi() {
   const [donasiItems, setDonasiItems] = useState<DonationItem[]>([]);
   const [productName, setProductName] = useState('');
   const [productDesc, setProductDesc] = useState('');
+  const [productQty, setProductQty] = useState(1);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   // Toast state
@@ -188,10 +189,9 @@ export default function DashboardDonasi() {
   };
 
   const handleStartDonation = async () => {
-    if (donasiItems.length === 0) {
-      showToast('Tambahkan minimal satu barang untuk didonasikan', 'error');
-      return;
-    }
+    // Validation: Either items list OR product details must be present. 
+    // Since productName is required below, we can skip specific list check here or merge them.
+    // We'll trust the productName check later.
 
     if (!productName.trim() || !productDesc.trim()) {
       showToast('Lengkapi informasi produk terlebih dahulu', 'error');
@@ -215,6 +215,7 @@ export default function DashboardDonasi() {
         deskripsi: fullDescription,
         kategori: 'Lainnya', // Default category as form doesn't have one
         foto: uploadedFile ? uploadedFile.name : null,
+        jumlah: productQty,
         lokasiId: 1, // Hardcoded for test user
         donaturId: 1 // Hardcoded for test user
       };
@@ -235,6 +236,7 @@ export default function DashboardDonasi() {
           setDonasiItems([]);
           setProductName('');
           setProductDesc('');
+          setProductQty(1);
           setLocationSearch('');
           setUploadedFile(null);
 
@@ -448,6 +450,24 @@ export default function DashboardDonasi() {
                 </div>
               </div>
 
+              {/* Product Quantity */}
+              <div>
+                <label htmlFor="productQty" className="font-medium text-gray-900 block mb-2">
+                  Jumlah Barang
+                </label>
+                <div className="border border-gray-300 rounded-xl p-3 focus-within:border-blue-900 transition-colors w-32">
+                  <input
+                    type="number"
+                    id="productQty"
+                    min="1"
+                    value={productQty}
+                    onChange={(e) => setProductQty(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-full outline-none text-gray-900 bg-transparent"
+                  />
+                </div>
+              </div>
+
+
               {/* Product Description */}
               <div>
                 <div className="flex justify-between items-center mb-2">
@@ -497,11 +517,11 @@ export default function DashboardDonasi() {
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <button
                   type="button"
-                  onClick={handleSaveDraft}
+                  onClick={handleStartDonation}
                   disabled={!productName.trim()}
                   className="flex-1 py-3 border-2 border-blue-900 text-blue-900 font-semibold rounded-xl hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Simpan Draft
+                  Simpan
                 </button>
                 <button
                   type="button"
@@ -665,7 +685,7 @@ export default function DashboardDonasi() {
           </div>
         </div>
         {/* Bottom Navigation */}
-      </main>
-    </div>
+      </main >
+    </div >
   );
 }

@@ -9,6 +9,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ username: string, role: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [donations, setDonations] = useState<any[]>([]);
 
   useEffect(() => {
     // Check auth
@@ -21,12 +22,23 @@ export default function DashboardPage() {
     try {
       const userData = JSON.parse(sessionStr);
       setUser(userData);
+
+      // Fetch Donations (if not receipt, or general view)
+      fetch('http://localhost:8080/api/donasi')
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setDonations(data);
+          }
+        })
+        .catch(err => console.error("Failed to fetch donations", err))
+        .finally(() => setLoading(false));
+
     } catch (e) {
       console.error("Invalid session", e);
       // router.push('/auth/login');
       // Fallback for dev if needed
       setUser({ username: 'Zunadea', role: 'donatur' });
-    } finally {
       setLoading(false);
     }
   }, [router]);
@@ -39,7 +51,7 @@ export default function DashboardPage() {
     <div className="md:container md:mx-auto pb-20">
 
       {/* HEADER SECTION */}
-      <div className={`${isPenerima ? 'bg-orange-600' : 'bg-primary'} text - white pt - 8 pb - 16 relative rounded - b - [2.5rem] md: rounded - b - none`}>
+      <div className={`${isPenerima ? 'bg-orange-600' : 'bg-primary'} text-white pt-8 pb-16 relative rounded-b-[2.5rem] md:rounded-b-none`}>
         <div className="px-6 flex items-center justify-between mb-6">
           <div>
             <p className="text-blue-100 text-sm mb-1">Selamat Datang,</p>
@@ -137,20 +149,40 @@ export default function DashboardPage() {
                 <h3 className="font-bold text-xl text-gray-800">Disekitar Anda</h3>
                 <Link href="/donasi" className="text-primary text-sm font-semibold">Lihat Semua</Link>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                    <div className="h-32 bg-gray-200 relative">
-                      {/* Placeholder Image */}
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-2xl">📦</div>
+
+              {/* Fetch Result Display */}
+              {donations.length === 0 ? (
+                <div className="p-8 text-center text-gray-400 bg-gray-50 rounded-xl">
+                  Belum ada donasi disekitar anda.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  {donations.map((d: any) => (
+                    <div key={d.donasiId} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col h-full">
+                      <div className="h-32 bg-gray-200 relative">
+                        {d.foto ? (
+                          // Note: In real app, serve image from backend. Here specific placeholder or try to use stored name if valid URL.
+                          // For now, fallback to placeholder logic or simple text if just a filename.
+                          <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-xs break-all p-2 bg-gray-100">
+                            {d.foto}
+                          </div>
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-2xl">📦</div>
+                        )}
+                      </div>
+                      <div className="p-3 flex-1 flex flex-col justify-between">
+                        <h5 className="font-bold text-gray-900 text-sm line-clamp-2" title={d.deskripsi}>
+                          {/* Parse Title if possible or show raw description */}
+                          {d.deskripsi.split('\n')[0].replace('Title: ', '')}
+                        </h5>
+                        <p className="text-xs text-gray-500 mt-1">
+                          📍 {d.lokasi?.alamatLengkap || 'Lokasi tidak tersedia'}
+                        </p>
+                      </div>
                     </div>
-                    <div className="p-3">
-                      <h5 className="font-bold text-gray-900 text-sm truncate">Bantuan #12{i}</h5>
-                      <p className="text-xs text-gray-500">📍 Bandung</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </section>
           </div>
         )}
