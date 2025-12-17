@@ -31,7 +31,7 @@ export default function ProfilePage() {
 
   const checkVerificationStatus = async (userId: number) => {
     try {
-      const res = await fetch(`http://localhost:8090/api/verifikasi/${userId}/status`);
+      const res = await fetch(`http://localhost:8080/api/verifikasi/${userId}/status`);
       if (res.ok) {
         const data = await res.json();
         if (data.status === "Dokumen sudah diupload, menunggu verifikasi" || data.status.includes("Terverifikasi")) {

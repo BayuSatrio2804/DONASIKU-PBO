@@ -21,13 +21,40 @@ export default function BuatPermintaanPage() {
         e.preventDefault();
         setIsLoading(true);
 
-        // Simulate API call
-        setTimeout(() => {
+        const fullDescription = `[${category}] ${description}\n\nUrgent: ${isUrgent ? 'Yes' : 'No'}\nLocation: ${location}`;
+
+        // Construct PermintaanDonasi payload
+        const payload = {
+            jenisBarang: title, // Mapping Title to Jenis Barang
+            jumlah: parseInt(quantity),
+            deskripsiKebutuhan: fullDescription,
+            status: "OPEN",
+            penerima: { userId: 1 }, // Hardcoded
+            lokasi: { lokasiId: 1 } // Hardcoded
+        };
+
+        try {
+            const response = await fetch('http://localhost:8080/api/permintaan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+                alert('Permintaan berhasil dibuat!');
+                router.push('/dashboard');
+            } else {
+                const errText = await response.text();
+                alert('Gagal membuat permintaan: ' + errText);
+            }
+        } catch (error) {
+            console.error('Error creating request:', error);
+            alert('Terjadi kesalahan koneksi');
+        } finally {
             setIsLoading(false);
-            // Navigate back or to success
-            alert('Permintaan berhasil dibuat!');
-            router.push('/dashboard');
-        }, 1500);
+        }
     };
 
     return (

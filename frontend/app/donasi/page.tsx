@@ -187,7 +187,7 @@ export default function DashboardDonasi() {
     showToast('Fitur preview akan ditampilkan di sini', 'info');
   };
 
-  const handleStartDonation = () => {
+  const handleStartDonation = async () => {
     if (donasiItems.length === 0) {
       showToast('Tambahkan minimal satu barang untuk didonasikan', 'error');
       return;
@@ -207,17 +207,48 @@ export default function DashboardDonasi() {
     );
 
     if (confirmDonation) {
-      showToast('Donasi berhasil disubmit! Terima kasih atas kontribusi Anda.', 'success');
+      // Construct description from product details and items list
+      const itemsList = donasiItems.map(item => `- ${item.name}`).join('\n');
+      const fullDescription = `Title: ${productName}\n\nDescription: ${productDesc}\n\nItems:\n${itemsList}\n\nLocation: ${locationSearch}`;
 
-      // Reset form
-      setDonasiItems([]);
-      setProductName('');
-      setProductDesc('');
-      setLocationSearch('');
-      setUploadedFile(null);
+      const payload = {
+        deskripsi: fullDescription,
+        kategori: 'Lainnya', // Default category as form doesn't have one
+        foto: uploadedFile ? uploadedFile.name : null,
+        lokasiId: 1, // Hardcoded for test user
+        donaturId: 1 // Hardcoded for test user
+      };
 
-      // Navigate to success page or refresh
-      router.push('/donasi/success');
+      try {
+        const response = await fetch('http://localhost:8080/api/donasi', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          showToast('Donasi berhasil disubmit! Terima kasih atas kontribusi Anda.', 'success');
+
+          // Reset form
+          setDonasiItems([]);
+          setProductName('');
+          setProductDesc('');
+          setLocationSearch('');
+          setUploadedFile(null);
+
+          // Navigate to success page or refresh
+          setTimeout(() => router.push('/dashboard'), 2000); // Redirect to dashboard instead of success page
+        } else {
+          const errorData = await response.text();
+          showToast(`Gagal mengirim donasi: ${errorData}`, 'error');
+          console.error('Donation failed:', errorData);
+        }
+      } catch (error) {
+        console.error('Error submitting donation:', error);
+        showToast('Terjadi kesalahan saat menghubungi server', 'error');
+      }
     }
   };
 

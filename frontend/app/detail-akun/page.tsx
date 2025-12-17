@@ -34,7 +34,7 @@ export default function DetailAkunPage() {
 
   const checkVerificationStatus = async (userId: number) => {
     try {
-      const res = await fetch(`http://localhost:8090/api/verifikasi/${userId}/status`);
+      const res = await fetch(`http://localhost:8080/api/verifikasi/${userId}/status`);
       if (res.ok) {
         const data = await res.json();
         // Check exact status string from backend
@@ -70,7 +70,7 @@ export default function DetailAkunPage() {
       formData.append('userId', user.userId.toString());
       formData.append('file', selectedFile);
 
-      const res = await fetch(`http://localhost:8090/api/verifikasi/upload`, {
+      const res = await fetch(`http://localhost:8080/api/verifikasi/upload`, {
         method: 'POST',
         body: formData,
       });
