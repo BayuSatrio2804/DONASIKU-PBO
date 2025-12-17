@@ -75,7 +75,7 @@ export default function SignupPage() {
       console.log('Signup successful:', data);
 
       // Redirect ke login page
-      setTimeout(() => {
+      setTimeout(() => {  
         router.push('/auth/login');
       }, 1000);
     } catch (err) {
