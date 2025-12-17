@@ -33,4 +33,10 @@ public class DokumenVerifikasi {
 
     @Column(name = "uploaded_at", updatable = false)
     private LocalDateTime uploadedAt;
+
+    @Column(name = "status_verifikasi", length = 50)
+    private String statusVerifikasi; // "pending", "terverifikasi", "ditolak"
+
+    @Column(name = "verified_at")
+    private LocalDateTime verifiedAt;
 }

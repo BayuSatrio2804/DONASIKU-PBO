@@ -2,6 +2,7 @@ package Donasiku.spring.core.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,10 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import Donasiku.spring.core.dto.VerifikasiRequest;
 import Donasiku.spring.core.dto.VerifikasiResponse;
 import Donasiku.spring.core.service.VerifikasiService;
-import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/verifikasi")
@@ -34,14 +33,20 @@ public class VerifikasiController {
      * "filePath": "/uploads/verifikasi/KTP_12345.pdf"
      * }
      */
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadDokumenVerifikasi(
             @org.springframework.web.bind.annotation.RequestParam("userId") Integer userId,
             @org.springframework.web.bind.annotation.RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        System.out.println("== REQUEST UPLOAD RECEIVED ==");
+        System.out.println("User ID: " + userId);
+        System.out.println("File Name: " + file.getOriginalFilename());
         try {
             VerifikasiResponse response = verifikasiService.uploadDokumenVerifikasi(userId, file);
+            System.out.println("== UPLOAD SUCCESS RESPONSE SENT ==");
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException e) {
+            System.err.println("== UPLOAD FAILED: " + e.getMessage());
+            e.printStackTrace();
             return new ResponseEntity<>(
                     new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
                     HttpStatus.BAD_REQUEST);
@@ -95,6 +100,46 @@ public class VerifikasiController {
             return new ResponseEntity<>(
                     new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
                     HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Admin: Get semua dokumen yang menunggu verifikasi
+     * GET /api/verifikasi/admin/pending
+     */
+    @GetMapping("/admin/pending")
+    public ResponseEntity<?> getPendingVerifikasi() {
+        try {
+            java.util.List<VerifikasiResponse> responses = verifikasiService.getAllPendingVerifikasi();
+            return ResponseEntity.ok(responses);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(
+                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Admin: Update status verifikasi dokumen
+     * PUT /api/verifikasi/admin/{dokumenId}/verify
+     * 
+     * Request body:
+     * {
+     * "status": "terverifikasi" atau "ditolak"
+     * }
+     */
+    @org.springframework.web.bind.annotation.PutMapping("/admin/{dokumenId}/verify")
+    public ResponseEntity<?> updateVerifikasiStatus(
+            @PathVariable Integer dokumenId,
+            @RequestBody java.util.Map<String, String> request) {
+        try {
+            String status = request.get("status");
+            VerifikasiResponse response = verifikasiService.updateVerifikasiStatus(dokumenId, status, null);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(
+                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
+                    HttpStatus.BAD_REQUEST);
         }
     }
 }

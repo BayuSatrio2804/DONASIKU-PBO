@@ -49,7 +49,7 @@ export default function SignupPage() {
       }
 
       // Call API to register
-      const response = await fetch('http://localhost:8081/api/auth/register', {
+      const response = await fetch('http://localhost:8090/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

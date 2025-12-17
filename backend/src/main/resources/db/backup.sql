@@ -14,8 +14,8 @@ CREATE TABLE Users (
     alamat TEXT COMMENT 'Alamat pengguna',
     no_telepon VARCHAR(99) COMMENT 'Nomor telepon',
     foto_profil VARCHAR(99) COMMENT 'Path/URL foto profil',
-    -- Role kini hanya Donatur dan Penerima
-    role ENUM('donatur', 'penerima') NOT NULL COMMENT 'Peran pengguna',
+    -- Role: Donatur, Penerima, dan Admin
+    role ENUM('donatur', 'penerima', 'admin') NOT NULL COMMENT 'Peran pengguna',
     status ENUM('active', 'deleted', 'suspended') DEFAULT 'active' COMMENT 'Status akun',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu pendaftaran',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Waktu update terakhir'
@@ -32,13 +32,15 @@ CREATE TABLE Donatur (
     FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 
--- Dokumen Verifikasi tidak berubah, tetapi tidak diverifikasi oleh Admin
+-- Dokumen Verifikasi dengan status verifikasi oleh Admin
 CREATE TABLE Dokumen_Verifikasi (
     dokumen_verifikasi_id INT PRIMARY KEY AUTO_INCREMENT COMMENT 'PK, AUTO INCREMENT',
     penerima_user_id INT NOT NULL COMMENT 'FK → Users.user_id',
     nama_file VARCHAR(99) COMMENT 'Nama file/tipe dokumen',
     file_path VARCHAR(99) COMMENT 'Path/URL file',
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu upload',
+    status_verifikasi VARCHAR(50) DEFAULT 'menunggu_verifikasi' COMMENT 'Status verifikasi: menunggu_verifikasi, terverifikasi, ditolak',
+    verified_at TIMESTAMP NULL COMMENT 'Waktu verifikasi oleh admin',
     FOREIGN KEY (penerima_user_id) REFERENCES Users(user_id)
 );
 
