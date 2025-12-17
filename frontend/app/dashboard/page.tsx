@@ -7,8 +7,9 @@ import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ username: string, role: string } | null>(null);
+  const [user, setUser] = useState<{ username: string, role: string, userId?: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [permintaan, setPermintaan] = useState<any[]>([]);
 
   useEffect(() => {
     // Check auth
@@ -21,6 +22,11 @@ export default function DashboardPage() {
     try {
       const userData = JSON.parse(sessionStr);
       setUser(userData);
+      
+      // Fetch permintaan untuk penerima
+      if (userData.role?.toLowerCase() === 'penerima' && userData.userId) {
+        fetchPermintaan();
+      }
     } catch (e) {
       console.error("Invalid session", e);
       // router.push('/auth/login');
@@ -30,6 +36,18 @@ export default function DashboardPage() {
       setLoading(false);
     }
   }, [router]);
+
+  const fetchPermintaan = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/permintaan');
+      if (response.ok) {
+        const data = await response.json();
+        setPermintaan(data);
+      }
+    } catch (err) {
+      console.error('Error fetching permintaan:', err);
+    }
+  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading...</div>;
 
@@ -45,7 +63,7 @@ export default function DashboardPage() {
     <div className="md:container md:mx-auto pb-20">
 
       {/* HEADER SECTION */}
-      <div className={`${isPenerima ? 'bg-orange-600' : 'bg-primary'} text-white pt-8 pb-8 rounded-t-3xl`}>
+      <div className="bg-primary text-white pt-8 pb-8 rounded-t-3xl">
         <div className="px-6 flex items-center justify-between mb-6">
           <div>
             <p className="text-white/60 text-sm mb-1">Selamat Datang,</p>
@@ -72,15 +90,9 @@ export default function DashboardPage() {
                 {isPenerima ? 'Ajukan permintaan barang' : 'Donasikan barang layak pakai'}
               </p>
             </div>
-            {isPenerima ? (
-              <Link href="/permintaan" className="bg-orange-500 text-white px-5 py-3 rounded-xl font-bold shadow-lg shadow-orange-200 hover:bg-orange-600 transition-all">
-                + Minta
-              </Link>
-            ) : (
-              <Link href="/donasi" className="bg-primary text-white px-5 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:opacity-90 transition-all">
-                + Donasi
-              </Link>
-            )}
+            <Link href={isPenerima ? "/permintaan" : "/donasi"} className="bg-primary text-white px-5 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:opacity-90 transition-all">
+              {isPenerima ? '+ Minta' : '+ Donasi'}
+            </Link>
           </div>
         </div>
 
@@ -90,19 +102,46 @@ export default function DashboardPage() {
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-xl text-gray-800">Permintaan Saya</h3>
-                <Link href="/riwayat?tab=permintaan" className="text-orange-600 text-sm font-semibold">Lihat Semua</Link>
+                <Link href="/riwayat?tab=permintaan" className="text-primary text-sm font-semibold">Lihat Semua</Link>
               </div>
-              {/* Empty State / Mock List */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
-                  🗳️
+              {/* List Permintaan atau Empty State */}
+              {permintaan.length === 0 ? (
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
+                    🗳️
+                  </div>
+                  <p className="font-medium text-gray-900">Belum ada permintaan aktif</p>
+                  <p className="text-sm text-gray-500 mt-2 mb-4">Buat permintaan baru jika Anda membutuhkan bantuan.</p>
+                  <Link href="/permintaan" className="text-primary font-semibold border border-primary/20 px-4 py-2 rounded-full hover:bg-primary/5 inline-block">
+                    Buat Permintaan
+                  </Link>
                 </div>
-                <p className="font-medium text-gray-900">Belum ada permintaan aktif</p>
-                <p className="text-sm text-gray-500 mt-2 mb-4">Buat permintaan baru jika Anda membutuhkan bantuan.</p>
-                <Link href="/permintaan" className="text-orange-600 font-semibold border border-orange-200 px-4 py-2 rounded-full hover:bg-orange-50 inline-block">
-                  Buat Permintaan
-                </Link>
-              </div>
+              ) : (
+                <div className="space-y-3">
+                  {permintaan.map((item: any) => (
+                    <Link key={item.permintaanId} href={`/permintaan/${item.permintaanId}`}>
+                      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-gray-900">{item.jenisBarang}</h4>
+                            <p className="text-xs text-gray-500 mt-1">📍 {item.lokasi?.alamatLengkap || 'Lokasi tidak tersedia'}</p>
+                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsiKebutuhan}</p>
+                            <div className="flex gap-2 mt-3">
+                              <span className="inline-block bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-semibold">
+                                {item.jumlah}x
+                              </span>
+                              <span className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">
+                                {item.status}
+                              </span>
+                            </div>
+                          </div>
+                          <button className="text-gray-400 hover:text-gray-600 text-xl">→</button>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </section>
 
             <section>

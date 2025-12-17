@@ -23,18 +23,39 @@ public class PermintaanService {
         User penerima = userRepository.findById(request.getPenerima().getUserId())
                 .orElseThrow(() -> new RuntimeException("User penerima tidak ditemukan"));
 
-        // Pastikan Lokasi ada (jika dikirim ID-nya saja, perlu fetch dulu seperti di DonasiService)
-        // Disini kita asumsikan object lokasi sudah diset atau di-fetch di controller/sebelumnya
-        // Untuk simpelnya, kita save langsung jika cascade, atau fetch jika pakai ID.
-        // Asumsi: request membawa object lokasi lengkap atau dilogikakan disini.
+        // Handle Lokasi - buat baru jika belum ada
+        Lokasi lokasi = request.getLokasi();
+        if (lokasi == null) {
+            throw new RuntimeException("Lokasi harus disediakan");
+        }
         
-        request.setStatus("Open"); // Status awal
+        // Jika lokasi belum punya ID, simpan dulu
+        if (lokasi.getLokasiId() == null) {
+            if (lokasi.getAlamatLengkap() == null || lokasi.getAlamatLengkap().isBlank()) {
+                throw new RuntimeException("Alamat lokasi tidak boleh kosong");
+            }
+            // Set default koordinat jika belum ada
+            if (lokasi.getGarisLintang() == null) lokasi.setGarisLintang(-6.1751);
+            if (lokasi.getGarisBujur() == null) lokasi.setGarisBujur(106.8270);
+            if (lokasi.getTipeLokasi() == null) lokasi.setTipeLokasi(Lokasi.TipeLokasi.penerima);
+            
+            lokasi = lokasiRepository.save(lokasi);
+        }
+        
+        request.setPenerima(penerima);
+        request.setLokasi(lokasi);
+        request.setStatus(request.getStatus() == null ? "Open" : request.getStatus());
         request.setCreatedAt(LocalDateTime.now());
         return permintaanRepository.save(request);
     }
 
     public List<PermintaanDonasi> listAll() {
         return permintaanRepository.findAll();
+    }
+
+    public PermintaanDonasi getById(Integer permintaanId) {
+        return permintaanRepository.findById(permintaanId)
+                .orElseThrow(() -> new RuntimeException("Permintaan dengan ID " + permintaanId + " tidak ditemukan"));
     }
 
     // --- FR-08: Donatur Menawarkan Bantuan (INTI TUGASMU) ---

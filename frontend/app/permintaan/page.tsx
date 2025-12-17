@@ -14,20 +14,70 @@ export default function BuatPermintaanPage() {
     const [quantity, setQuantity] = useState('');
     const [location, setLocation] = useState('');
     const [isUrgent, setIsUrgent] = useState(false);
-
+    const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         setIsLoading(true);
 
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false);
-            // Navigate back or to success
+        try {
+            // Get user data from localStorage
+            const sessionStr = localStorage.getItem('userSession');
+            if (!sessionStr) {
+                setError('Session tidak ditemukan. Silakan login ulang.');
+                setIsLoading(false);
+                return;
+            }
+
+            const userData = JSON.parse(sessionStr);
+            
+            // Validate user is penerima
+            if (userData.role?.toLowerCase() !== 'penerima') {
+                setError('Hanya penerima yang dapat membuat permintaan');
+                setIsLoading(false);
+                return;
+            }
+
+            // Prepare data sesuai entity backend
+            const permintaanData = {
+                jenisBarang: title,
+                deskripsiKebutuhan: description,
+                jumlah: parseInt(quantity),
+                lokasi: {
+                    alamatLengkap: location,
+                    garisLintang: -6.1751, // default
+                    garisBujur: 106.8270   // default
+                },
+                penerima: {
+                    userId: userData.userId
+                },
+                status: isUrgent ? 'Urgent' : 'Open'
+            };
+
+            const response = await fetch('http://localhost:8080/api/permintaan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(permintaanData),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.text();
+                throw new Error(errorData || 'Gagal membuat permintaan');
+            }
+
             alert('Permintaan berhasil dibuat!');
             router.push('/dashboard');
-        }, 1500);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Terjadi kesalahan';
+            setError(message);
+            console.error('Error:', err);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -48,6 +98,14 @@ export default function BuatPermintaanPage() {
             {/* Main Content */}
             <div className="container mx-auto px-4 py-6 max-w-2xl">
                 <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-6 space-y-6">
+
+                    {/* Error Banner */}
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3 text-red-800 text-sm">
+                            <span className="text-lg">❌</span>
+                            <p>{error}</p>
+                        </div>
+                    )}
 
                     {/* Warning Banner */}
                     <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex gap-3 text-orange-800 text-sm">
@@ -154,7 +212,7 @@ export default function BuatPermintaanPage() {
                                 checked={isUrgent}
                                 onChange={(e) => setIsUrgent(e.target.checked)}
                             />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                         </label>
                     </div>
 

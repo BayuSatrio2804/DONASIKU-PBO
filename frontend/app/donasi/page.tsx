@@ -593,7 +593,7 @@ export default function DashboardDonasi() {
             {SAMPLE_ITEMS.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow hover:-translate-y-1 transition-transform cursor-pointer border border-transparent hover:border-blue-200"
+                className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-all cursor-pointer border border-transparent hover:border-blue-200"
                 onClick={() => {
                   setSearchQuery(item.name);
                   // Scroll to search input
@@ -603,7 +603,7 @@ export default function DashboardDonasi() {
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(item.name)}
               >
-                <div className="w-full h-40 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg mb-3 flex items-center justify-center">
+                <div className="w-full h-40 bg-linear-to-br from-gray-100 to-gray-200 rounded-lg mb-3 flex items-center justify-center">
                   <span className="text-gray-500 text-5xl">
                     {item.category === 'Pakaian' && '👕'}
                     {item.category === 'Buku' && '📚'}
