@@ -44,7 +44,14 @@ public class AuthService {
         newUser.setNoTelepon(request.getNoTelepon());
 
         try {
-            newUser.setRole(User.UserRole.valueOf(request.getRole().toLowerCase()));
+            String roleInput = request.getRole().toLowerCase();
+            
+            // Restrict role admin - hanya bisa dibuat via backend/seeder
+            if ("admin".equals(roleInput)) {
+                throw new RuntimeException("Role admin tidak dapat didaftarkan melalui registration endpoint.");
+            }
+            
+            newUser.setRole(User.UserRole.valueOf(roleInput));
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Role tidak valid: " + request.getRole());
         }

@@ -34,15 +34,15 @@ export default function DetailAkunPage() {
 
   const checkVerificationStatus = async (userId: number) => {
     try {
-      const res = await fetch(`http://localhost:8081/api/verifikasi/${userId}/status`);
+      const res = await fetch(`http://localhost:8090/api/verifikasi/${userId}/status`);
       if (res.ok) {
         const data = await res.json();
-        // Assuming backend returns status info. VerifyController logic suggests getting status returns an object.
-        // If it returns OK with data, we assume simulated "verified" if fetching details succeeds or if a specific field says so.
-        // Actually, VerifyController just returns "VerifikasiResponse". Let's check if it implies verified.
-        // For now, if we find a record, we treat it as PENDING or VERIFIED.
-        // Since the controller gets "Dokumen", if 404 it means not verified.
-        setIsVerified(true);
+        // Check exact status string from backend
+        if (data.status === "Dokumen sudah diupload, menunggu verifikasi" || data.status.includes("Terverifikasi")) {
+          setIsVerified(true);
+        } else {
+          setIsVerified(false);
+        }
       } else {
         setIsVerified(false);
       }
@@ -70,14 +70,14 @@ export default function DetailAkunPage() {
       formData.append('userId', user.userId.toString());
       formData.append('file', selectedFile);
 
-      const res = await fetch(`http://localhost:8081/api/verifikasi/upload`, {
+      const res = await fetch(`http://localhost:8090/api/verifikasi/upload`, {
         method: 'POST',
         body: formData,
       });
 
       if (res.ok) {
-        alert('Dokumen berhasil diunggah! Menunggu verifikasi admin.');
-        setIsVerified(true);
+        alert('Dokumen berhasil diunggah! Menunggu verifikasi dari admin.');
+        setIsVerified(false);
         setShowUploadModal(false);
         checkVerificationStatus(user.userId);
       } else {
@@ -245,8 +245,8 @@ export default function DetailAkunPage() {
                 onClick={handleUpload}
                 disabled={uploading || !selectedFile}
                 className={`flex-1 py-2 rounded-xl font-bold text-white shadow-lg transition-colors ${uploading || !selectedFile
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
                   }`}
               >
                 {uploading ? 'Mengunggah...' : 'Kirim'}

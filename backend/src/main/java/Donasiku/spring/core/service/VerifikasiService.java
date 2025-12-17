@@ -75,9 +75,13 @@ public class VerifikasiService {
             dokumen.setNamaFile(file.getOriginalFilename());
             dokumen.setFilePath(filePath.toString());
             dokumen.setUploadedAt(LocalDateTime.now());
+            // Status awal: menunggu verifikasi dari admin
+            dokumen.setStatusVerifikasi("menunggu_verifikasi");
 
+            System.out.println("Menyimpan ke repository...");
             DokumenVerifikasi saved = dokumenVerifikasiRepository.save(dokumen);
-            return mapToResponse(saved, "Dokumen verifikasi berhasil diupload");
+            System.out.println("Tersimpan! ID: " + saved.getDokumenVerifikasiId());
+            return mapToResponse(saved, "Dokumen verifikasi berhasil diupload. Menunggu verifikasi dari admin");
 
         } catch (java.io.IOException e) {
             throw new RuntimeException("Gagal menyimpan file: " + e.getMessage());
@@ -118,8 +122,8 @@ public class VerifikasiService {
             response.setNamaFile(doc.getNamaFile());
             response.setFilePath(doc.getFilePath());
             response.setUploadedAt(doc.getUploadedAt());
-            response.setStatus("Dokumen sudah diupload, menunggu verifikasi");
-            response.setMessage("Status: Terverifikasi = " + user.getStatus());
+            response.setStatus(doc.getStatusVerifikasi() != null ? doc.getStatusVerifikasi() : "menunggu_verifikasi");
+            response.setMessage("Status verifikasi: " + (doc.getStatusVerifikasi() != null ? doc.getStatusVerifikasi() : "menunggu_verifikasi"));
         } else {
             response.setStatus("Belum ada dokumen verifikasi");
             response.setMessage("User belum melakukan upload dokumen");
@@ -142,6 +146,41 @@ public class VerifikasiService {
     /**
      * Mapping helper
      */
+    /**
+     * Admin approve/reject dokumen verifikasi
+     */
+    @Transactional
+    public VerifikasiResponse updateVerifikasiStatus(Integer dokumenId, String status, Integer adminUserId) {
+        Optional<DokumenVerifikasi> dokumenOpt = dokumenVerifikasiRepository.findById(dokumenId);
+        if (dokumenOpt.isEmpty()) {
+            throw new RuntimeException("Dokumen verifikasi tidak ditemukan dengan ID: " + dokumenId);
+        }
+
+        // Validasi status
+        if (!status.equals("terverifikasi") && !status.equals("ditolak")) {
+            throw new RuntimeException("Status tidak valid. Hanya 'terverifikasi' atau 'ditolak' yang diperbolehkan");
+        }
+
+        DokumenVerifikasi dokumen = dokumenOpt.get();
+        dokumen.setStatusVerifikasi(status);
+        dokumen.setVerifiedAt(LocalDateTime.now());
+
+        DokumenVerifikasi saved = dokumenVerifikasiRepository.save(dokumen);
+        return mapToResponse(saved, "Status dokumen diupdate menjadi: " + status);
+    }
+
+    /**
+     * Get semua dokumen yang menunggu verifikasi (untuk admin)
+     */
+    public java.util.List<VerifikasiResponse> getAllPendingVerifikasi() {
+        // Query dokumen dengan status "menunggu_verifikasi"
+        java.util.List<DokumenVerifikasi> dokumenList = dokumenVerifikasiRepository.findAll();
+        return dokumenList.stream()
+                .filter(d -> "menunggu_verifikasi".equals(d.getStatusVerifikasi()))
+                .map(d -> mapToResponse(d, "Dokumen menunggu verifikasi"))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     private VerifikasiResponse mapToResponse(DokumenVerifikasi dokumen, String message) {
         return new VerifikasiResponse(
                 dokumen.getDokumenVerifikasiId(),
@@ -149,7 +188,7 @@ public class VerifikasiService {
                 dokumen.getNamaFile(),
                 dokumen.getFilePath(),
                 dokumen.getUploadedAt(),
-                "Dokumen diterima",
+                dokumen.getStatusVerifikasi() != null ? dokumen.getStatusVerifikasi() : "menunggu_verifikasi",
                 message);
     }
 }

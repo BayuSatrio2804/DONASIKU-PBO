@@ -7,21 +7,43 @@ import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ username: string, role: string } | null>(null);
+  const [user, setUser] = useState<{ username: string, role: string, userId: number } | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
 
   // Load user data
+  // Load user data & Check Status
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const sessionStr = localStorage.getItem('userSession');
       if (sessionStr) {
         try {
-          setUser(JSON.parse(sessionStr));
+          const userData = JSON.parse(sessionStr);
+          setUser(userData);
+          if (userData.userId && userData.role === 'penerima') {
+            checkVerificationStatus(userData.userId);
+          }
         } catch (e) {
           console.error(e);
         }
       }
     }
   }, []);
+
+  const checkVerificationStatus = async (userId: number) => {
+    try {
+      const res = await fetch(`http://localhost:8090/api/verifikasi/${userId}/status`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === "Dokumen sudah diupload, menunggu verifikasi" || data.status.includes("Terverifikasi")) {
+          // Basic check: if record exists, we consider it pending/verified for now 
+          // Logic mirrors DetailAkunPage 
+          setIsVerified(true);
+        }
+      }
+    } catch (error) {
+      console.error("Status check failed", error);
+    }
+  };
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -63,10 +85,12 @@ export default function ProfilePage() {
               <h2 className="text-xl font-bold text-gray-900 mb-1">
                 {user?.username || 'Tamu'}
               </h2>
-              <div className="flex items-center gap-1 text-sm text-blue-600 mb-3">
-                <span>✓</span>
-                <span>Sudah Terverifikasi</span>
-              </div>
+              {user?.role === 'penerima' && (
+                <div className={`flex items-center gap-1 text-sm mb-3 ${isVerified ? 'text-green-600' : 'text-gray-400'}`}>
+                  <span>{isVerified ? '✓' : '○'}</span>
+                  <span>{isVerified ? 'Menunggu Verifikasi / Terverifikasi' : 'Belum Terverifikasi'}</span>
+                </div>
+              )}
               <button
                 onClick={() => router.push('/detail-akun')}
                 className="text-sm font-semibold text-blue-900 px-4 py-1 border border-blue-900 rounded-full hover:bg-blue-50 transition-colors"
@@ -183,8 +207,8 @@ export default function ProfilePage() {
               <button
                 onClick={() => setActiveRoleTab('donatur')}
                 className={`flex-1 py-4 font-semibold text-sm transition-colors ${activeRoleTab === 'donatur'
-                    ? 'text-blue-900 border-b-2 border-blue-900 bg-blue-50'
-                    : 'text-gray-500 hover:text-gray-700'
+                  ? 'text-blue-900 border-b-2 border-blue-900 bg-blue-50'
+                  : 'text-gray-500 hover:text-gray-700'
                   }`}
               >
                 Donatur
@@ -192,8 +216,8 @@ export default function ProfilePage() {
               <button
                 onClick={() => setActiveRoleTab('penerima')}
                 className={`flex-1 py-4 font-semibold text-sm transition-colors ${activeRoleTab === 'penerima'
-                    ? 'text-orange-500 border-b-2 border-orange-500 bg-orange-50'
-                    : 'text-gray-500 hover:text-gray-700'
+                  ? 'text-orange-500 border-b-2 border-orange-500 bg-orange-50'
+                  : 'text-gray-500 hover:text-gray-700'
                   }`}
               >
                 Penerima

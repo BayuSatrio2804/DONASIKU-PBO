@@ -17,8 +17,8 @@ import Donasiku.spring.core.repository.UserRepository;
 @Configuration
 public class DataSeeder {
 
-    // DISABLED - Database schema issue on startup
-    // @Bean
+    // TEMPORARILY DISABLED - Need to update DB schema first
+    // @org.springframework.context.annotation.Bean
     CommandLineRunner initDatabaseDisabled(StatusDonasiRepository statusRepo, 
                                    UserRepository userRepo, 
                                    LokasiRepository lokasiRepo,
@@ -54,7 +54,26 @@ public class DataSeeder {
                 loc = lokasiRepo.findAll().get(0);
             }
             
-            // 3. User
+            // 3. User - Admin
+            User admin = null;
+            if (userRepo.findByUsername("admin").isEmpty()) {
+                User u = new User();
+                u.setUsername("admin");
+                u.setEmail("admin@donasiku.com");
+                u.setPassword(passwordEncoder.encode("admin123")); 
+                u.setNama("Administrator");
+                u.setRole(UserRole.admin);
+                u.setStatus(User.UserStatus.active);
+                admin = userRepo.save(u);
+                System.out.println("=== AUTO-CREATED ADMIN USER ===");
+                System.out.println("Username: admin");
+                System.out.println("Password: admin123");
+                System.out.println("==================================");
+            } else {
+                admin = userRepo.findByUsername("admin").get();
+            }
+
+            // 3. User - Donatur & Penerima
             User donatur = null;
             User penerima = null;
             
@@ -65,6 +84,7 @@ public class DataSeeder {
                 u.setPassword(passwordEncoder.encode("123456")); 
                 u.setNama("Nauval Athalla");
                 u.setRole(UserRole.donatur); 
+                u.setStatus(User.UserStatus.active);
                 donatur = userRepo.save(u);
             } else {
                 donatur = userRepo.findByUsername("nauval").get();
@@ -77,6 +97,7 @@ public class DataSeeder {
                 u2.setPassword(passwordEncoder.encode("123456"));
                 u2.setNama("Panti Asuhan");
                 u2.setRole(UserRole.penerima);
+                u2.setStatus(User.UserStatus.active);
                 penerima = userRepo.save(u2);
             } else {
                 penerima = userRepo.findByUsername("penerima1").get();

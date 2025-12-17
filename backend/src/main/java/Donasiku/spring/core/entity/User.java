@@ -66,7 +66,7 @@ public class User {
     // --- Inner Enums untuk Mapping SQL ENUM ---
     
     public enum UserRole {
-        donatur, penerima
+        donatur, penerima, admin
     }
 
     public enum UserStatus {
