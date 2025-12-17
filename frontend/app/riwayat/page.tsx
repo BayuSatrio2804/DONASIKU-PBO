@@ -212,32 +212,28 @@ export default function RiwayatPage() {
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${
-                message.sender === 'user' ? 'justify-end' : 'justify-start'
-              }`}
+              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'
+                }`}
             >
               <div
-                className={`flex gap-2 max-w-xs ${
-                  message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'
-                }`}
+                className={`flex gap-2 max-w-xs ${message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'
+                  }`}
               >
                 {message.sender === 'other' && (
                   <div className="w-8 h-8 rounded-full bg-gray-300 shrink-0"></div>
                 )}
                 <div
-                  className={`rounded-2xl px-4 py-2 ${
-                    message.sender === 'user'
-                      ? 'bg-blue-500 text-white'
+                  className={`rounded-2xl px-4 py-2 ${message.sender === 'user'
+                      ? 'bg-primary text-white'
                       : 'bg-gray-200 text-gray-900'
-                  }`}
+                    }`}
                 >
                   <p className="text-sm">{message.text}</p>
                   <p
-                    className={`text-xs mt-1 ${
-                      message.sender === 'user'
+                    className={`text-xs mt-1 ${message.sender === 'user'
                         ? 'text-blue-100'
                         : 'text-gray-600'
-                    }`}
+                      }`}
                   >
                     {message.time}{' '}
                     {message.sender === 'user' && '✓'}
@@ -298,21 +294,19 @@ export default function RiwayatPage() {
         <div className="inline-flex bg-white rounded-full p-1 border border-gray-300 gap-2">
           <button
             onClick={() => setActiveTab('barang')}
-            className={`px-6 py-2 rounded-full font-medium transition-colors ${
-              activeTab === 'barang'
-                ? 'bg-blue-600 text-white'
+            className={`px-6 py-2 rounded-full font-medium transition-colors ${activeTab === 'barang'
+                ? 'bg-primary text-white'
                 : 'text-gray-700 hover:text-gray-900'
-            }`}
+              }`}
           >
             Riwayat Barang
           </button>
           <button
             onClick={() => setActiveTab('chat')}
-            className={`px-6 py-2 rounded-full font-medium transition-colors ${
-              activeTab === 'chat'
-                ? 'bg-blue-600 text-white'
+            className={`px-6 py-2 rounded-full font-medium transition-colors ${activeTab === 'chat'
+                ? 'bg-primary text-white'
                 : 'text-gray-700 hover:text-gray-900'
-            }`}
+              }`}
           >
             Riwayat Chat
           </button>
@@ -359,9 +353,8 @@ export default function RiwayatPage() {
                   {/* Right Section - Item Info & Status */}
                   <div className="flex flex-col items-end gap-3">
                     <div
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        statusStyles[donation.status]
-                      }`}
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyles[donation.status]
+                        }`}
                     >
                       {statusLabels[donation.status]}
                     </div>
@@ -438,61 +431,7 @@ export default function RiwayatPage() {
       </div>
 
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200">
-        <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-around">
-          <button
-            onClick={() => {
-              router.push('/dashboard');
-            }}
-            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-colors ${
-              activeTab === 'home'
-                ? 'text-blue-900'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-2xl">🏠</span>
-            <span className="text-xs font-semibold">Home</span>
-          </button>
 
-          <button
-            onClick={() => setActiveTab('donate')}
-            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-colors ${
-              activeTab === 'donate'
-                ? 'text-blue-900'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-2xl">❤️</span>
-            <span className="text-xs font-semibold">Donasi</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('riwayat')}
-            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-colors ${
-              activeTab === 'riwayat'
-                ? 'text-blue-900'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-2xl">⏱️</span>
-            <span className="text-xs font-semibold">Riwayat</span>
-          </button>
-
-          <button
-            onClick={() => {
-              router.push('/profile');
-            }}
-            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-colors ${
-              activeTab === 'profile'
-                ? 'text-blue-900'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-2xl">👤</span>
-            <span className="text-xs font-semibold">Profile</span>
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

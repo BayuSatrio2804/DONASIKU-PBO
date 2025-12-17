@@ -31,26 +31,24 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest request) {
         try {
             User newUser = authService.registerNewUser(request);
-            
+
             AuthResponse response = new AuthResponse(
-                true,
-                "User " + newUser.getUsername() + " berhasil didaftarkan.",
-                newUser.getUsername(),
-                newUser.getUserId(),
-                newUser.getEmail(),
-                newUser.getRole().toString()
-            );
-            
+                    true,
+                    "User " + newUser.getUsername() + " berhasil didaftarkan.",
+                    newUser.getUsername(),
+                    newUser.getUserId(),
+                    newUser.getEmail(),
+                    newUser.getRole().toString());
+
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException e) {
             AuthResponse errorResponse = new AuthResponse(
-                false,
-                e.getMessage(),
-                null,
-                null,
-                null,
-                null
-            );
+                    false,
+                    e.getMessage(),
+                    null,
+                    null,
+                    null,
+                    null);
             return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         }
     }
@@ -60,13 +58,25 @@ public class AuthController {
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest request) {
         try {
             User authenticatedUser = authService.authenticateSimple(request);
-            
-            // TODO: Di sini, Anda harusnya membuat dan mengembalikan JWT Token.
-            // Untuk saat ini, kita kembalikan status sukses sederhana.
-            
-            return ResponseEntity.ok("Login berhasil! Selamat datang, " + authenticatedUser.getUsername() + ".");
+
+            AuthResponse response = new AuthResponse(
+                    true,
+                    "Login berhasil! Selamat datang, " + authenticatedUser.getUsername() + ".",
+                    authenticatedUser.getUsername(),
+                    authenticatedUser.getUserId(),
+                    authenticatedUser.getEmail(),
+                    authenticatedUser.getRole().toString());
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (RuntimeException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED); // 401 Unauthorized
+            AuthResponse errorResponse = new AuthResponse(
+                    false,
+                    e.getMessage(),
+                    null,
+                    null,
+                    null,
+                    null);
+            return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
         }
     }
 }

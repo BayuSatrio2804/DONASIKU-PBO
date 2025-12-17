@@ -13,27 +13,54 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
+  // Handles Login
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      // TODO: Replace with actual API call
       if (!username || !password) {
         setError('Username dan password harus diisi');
         return;
       }
 
-      // Simulated login
-      console.log('Login attempt:', { username, password });
-      
-      // For demo purposes, simulate successful login
+      // Call API to login
+      const response = await fetch('http://localhost:8081/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          usernameOrEmail: username,
+          password
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login gagal');
+      }
+
+      // Data dari backend sekarang: 
+      // { success: true, message: "...", username, userId, email, role: "DONATUR"/"PENERIMA" }
+
+      const sessionData = {
+        username: data.username,
+        userId: data.userId,
+        role: data.role ? data.role.toLowerCase() : 'donatur', // Handle case-sensitivity
+        token: 'mock-jwt-token' // Backend belum provide JWT, placeholder aman
+      };
+
+      localStorage.setItem('userSession', JSON.stringify(sessionData));
+      console.log('Login success:', sessionData);
+
       setTimeout(() => {
         router.push('/dashboard');
       }, 500);
-    } catch (err) {
-      setError('Login gagal. Silakan coba lagi.');
+    } catch (err: any) {
+      setError(err.message || 'Login gagal. Silakan coba lagi.');
       console.error('Login error:', err);
     } finally {
       setIsLoading(false);
@@ -86,7 +113,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Masukan username"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all text-black"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-black"
               />
             </div>
 
@@ -105,7 +132,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukan password"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all text-black"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-black"
                 />
                 <button
                   type="button"
@@ -122,7 +149,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-blue-900 text-white font-semibold rounded-full hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-primary text-white font-semibold rounded-full hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Memproses...' : 'Masuk'}
             </button>
@@ -133,7 +160,7 @@ export default function LoginPage() {
             Belum punya akun?{' '}
             <Link
               href="/auth/signup"
-              className="text-blue-900 font-semibold hover:underline"
+              className="text-primary font-semibold hover:underline"
             >
               silahkan daftar
             </Link>

@@ -49,7 +49,7 @@ export default function SignupPage() {
       }
 
       // Call API to register
-      const response = await fetch('http://localhost:8080/api/auth/register', {
+      const response = await fetch('http://localhost:8081/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ export default function SignupPage() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Pendaftaran gagal');
       }
@@ -73,7 +73,7 @@ export default function SignupPage() {
       }
 
       console.log('Signup successful:', data);
-      
+
       // Redirect ke login page
       setTimeout(() => {
         router.push('/auth/login');
@@ -133,7 +133,7 @@ export default function SignupPage() {
                 value={formData.username}
                 onChange={handleChange}
                 placeholder="Masukan username"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all text-black"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-black"
               />
             </div>
 
@@ -152,7 +152,7 @@ export default function SignupPage() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Masukan email"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all text-black"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-black"
               />
             </div>
 
@@ -169,7 +169,7 @@ export default function SignupPage() {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all text-black"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-black"
               >
                 <option value="donatur">Donatur</option>
                 <option value="penerima">Penerima</option>
@@ -192,7 +192,7 @@ export default function SignupPage() {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Masukan password"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all text-black"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-black"
                 />
                 <button
                   type="button"
@@ -221,7 +221,7 @@ export default function SignupPage() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Konfirmasi password"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent transition-all text-black"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-black"
                 />
                 <button
                   type="button"
@@ -238,7 +238,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-blue-900 text-white font-semibold rounded-full hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+              className="w-full py-3 bg-primary text-white font-semibold rounded-full hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
             >
               {isLoading ? 'Memproses...' : 'Daftar'}
             </button>
@@ -249,7 +249,7 @@ export default function SignupPage() {
             Sudah punya akun?{' '}
             <Link
               href="/auth/login"
-              className="text-blue-900 font-semibold hover:underline"
+              className="text-primary font-semibold hover:underline"
             >
               silahkan masuk
             </Link>

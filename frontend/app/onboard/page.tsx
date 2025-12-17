@@ -96,9 +96,8 @@ export default function OnboardingPage() {
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                index === currentSlide ? 'bg-blue-900 w-8' : 'bg-gray-300'
-              }`}
+              className={`w-2 h-2 rounded-full transition-all ${index === currentSlide ? 'bg-primary w-8' : 'bg-gray-300'
+                }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}
@@ -114,7 +113,7 @@ export default function OnboardingPage() {
           </Link>
           <button
             onClick={goToNextSlide}
-            className="flex-1 py-3 px-6 bg-blue-900 text-white font-semibold rounded-full hover:bg-blue-800 transition-colors"
+            className="flex-1 py-3 px-6 bg-primary text-white font-semibold rounded-full hover:opacity-90 transition-colors"
           >
             {slides[currentSlide].buttonText}
           </button>

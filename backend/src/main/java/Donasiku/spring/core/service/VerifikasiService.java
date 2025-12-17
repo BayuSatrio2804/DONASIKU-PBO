@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import Donasiku.spring.core.dto.VerifikasiRequest;
 import Donasiku.spring.core.dto.VerifikasiResponse;
 import Donasiku.spring.core.entity.DokumenVerifikasi;
 import Donasiku.spring.core.entity.User;
@@ -27,43 +26,62 @@ public class VerifikasiService {
      * FR-16: Upload dokumen verifikasi untuk pengguna
      * Hanya Penerima Donasi yang bisa upload dokumen
      */
+    /**
+     * FR-16: Upload dokumen verifikasi untuk pengguna (Multipart)
+     */
     @Transactional
-    public VerifikasiResponse uploadDokumenVerifikasi(VerifikasiRequest request) {
+    public VerifikasiResponse uploadDokumenVerifikasi(Integer userId,
+            org.springframework.web.multipart.MultipartFile file) {
         // Cek apakah user ada dan adalah Penerima
-        Optional<User> userOpt = userRepository.findById(request.getUserId());
+        Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
-            throw new RuntimeException("User tidak ditemukan dengan ID: " + request.getUserId());
+            throw new RuntimeException("User tidak ditemukan dengan ID: " + userId);
         }
 
         User user = userOpt.get();
-        
-        // Hanya Penerima yang boleh upload dokumen
         if (!user.getRole().equals(User.UserRole.penerima)) {
-            throw new RuntimeException("Hanya Penerima yang dapat melakukan verifikasi. User ini adalah: " + user.getRole());
+            throw new RuntimeException("Hanya Penerima yang dapat melakukan verifikasi.");
         }
 
-        // Cek apakah sudah ada dokumen sebelumnya
-        Optional<DokumenVerifikasi> existingDoc = dokumenVerifikasiRepository
-                .findByPenerimaUserId(request.getUserId());
-
-        DokumenVerifikasi dokumen;
-        if (existingDoc.isPresent()) {
-            // Update dokumen yang sudah ada
-            dokumen = existingDoc.get();
-            dokumen.setNamaFile(request.getNamaFile());
-            dokumen.setFilePath(request.getFilePath());
-        } else {
-            // Buat dokumen baru
-            dokumen = new DokumenVerifikasi();
-            dokumen.setPenerimaUserId(request.getUserId());
-            dokumen.setNamaFile(request.getNamaFile());
-            dokumen.setFilePath(request.getFilePath());
+        if (file.isEmpty()) {
+            throw new RuntimeException("File tidak boleh kosong");
         }
 
-        dokumen.setUploadedAt(LocalDateTime.now());
-        DokumenVerifikasi saved = dokumenVerifikasiRepository.save(dokumen);
+        try {
+            // Setup directory
+            String uploadDir = "uploads/verification/";
+            java.io.File directory = new java.io.File(uploadDir);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
 
-        return mapToResponse(saved, "Dokumen verifikasi berhasil diupload");
+            // Save file
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            java.nio.file.Path filePath = java.nio.file.Paths.get(uploadDir + fileName);
+            java.nio.file.Files.copy(file.getInputStream(), filePath,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            // Update Database
+            Optional<DokumenVerifikasi> existingDoc = dokumenVerifikasiRepository.findByPenerimaUserId(userId);
+            DokumenVerifikasi dokumen;
+
+            if (existingDoc.isPresent()) {
+                dokumen = existingDoc.get();
+            } else {
+                dokumen = new DokumenVerifikasi();
+                dokumen.setPenerimaUserId(userId);
+            }
+
+            dokumen.setNamaFile(file.getOriginalFilename());
+            dokumen.setFilePath(filePath.toString());
+            dokumen.setUploadedAt(LocalDateTime.now());
+
+            DokumenVerifikasi saved = dokumenVerifikasiRepository.save(dokumen);
+            return mapToResponse(saved, "Dokumen verifikasi berhasil diupload");
+
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Gagal menyimpan file: " + e.getMessage());
+        }
     }
 
     /**
@@ -93,7 +111,7 @@ public class VerifikasiService {
 
         VerifikasiResponse response = new VerifikasiResponse();
         response.setPenerimaUserId(userId);
-        
+
         if (dokumen.isPresent()) {
             DokumenVerifikasi doc = dokumen.get();
             response.setDokumenVerifikasiId(doc.getDokumenVerifikasiId());
@@ -126,13 +144,12 @@ public class VerifikasiService {
      */
     private VerifikasiResponse mapToResponse(DokumenVerifikasi dokumen, String message) {
         return new VerifikasiResponse(
-            dokumen.getDokumenVerifikasiId(),
-            dokumen.getPenerimaUserId(),
-            dokumen.getNamaFile(),
-            dokumen.getFilePath(),
-            dokumen.getUploadedAt(),
-            "Dokumen diterima",
-            message
-        );
+                dokumen.getDokumenVerifikasiId(),
+                dokumen.getPenerimaUserId(),
+                dokumen.getNamaFile(),
+                dokumen.getFilePath(),
+                dokumen.getUploadedAt(),
+                "Dokumen diterima",
+                message);
     }
 }

@@ -29,21 +29,22 @@ public class VerifikasiController {
      * 
      * Request body:
      * {
-     *   "userId": 1,
-     *   "namaFile": "KTP_12345.pdf",
-     *   "filePath": "/uploads/verifikasi/KTP_12345.pdf"
+     * "userId": 1,
+     * "namaFile": "KTP_12345.pdf",
+     * "filePath": "/uploads/verifikasi/KTP_12345.pdf"
      * }
      */
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadDokumenVerifikasi(@Valid @RequestBody VerifikasiRequest request) {
+    public ResponseEntity<?> uploadDokumenVerifikasi(
+            @org.springframework.web.bind.annotation.RequestParam("userId") Integer userId,
+            @org.springframework.web.bind.annotation.RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         try {
-            VerifikasiResponse response = verifikasiService.uploadDokumenVerifikasi(request);
+            VerifikasiResponse response = verifikasiService.uploadDokumenVerifikasi(userId, file);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(
-                new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
-                HttpStatus.BAD_REQUEST
-            );
+                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
+                    HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -58,9 +59,8 @@ public class VerifikasiController {
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(
-                new VerifikasiResponse(null, null, null, null, null, "NOT_FOUND", e.getMessage()),
-                HttpStatus.NOT_FOUND
-            );
+                    new VerifikasiResponse(null, null, null, null, null, "NOT_FOUND", e.getMessage()),
+                    HttpStatus.NOT_FOUND);
         }
     }
 
@@ -75,9 +75,8 @@ public class VerifikasiController {
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(
-                new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
-                HttpStatus.NOT_FOUND
-            );
+                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
+                    HttpStatus.NOT_FOUND);
         }
     }
 
@@ -90,13 +89,12 @@ public class VerifikasiController {
         try {
             verifikasiService.deleteDokumenVerifikasi(userId);
             return ResponseEntity.ok(
-                new VerifikasiResponse(null, userId, null, null, null, "DELETED", "Dokumen verifikasi berhasil dihapus")
-            );
+                    new VerifikasiResponse(null, userId, null, null, null, "DELETED",
+                            "Dokumen verifikasi berhasil dihapus"));
         } catch (RuntimeException e) {
             return new ResponseEntity<>(
-                new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
-                HttpStatus.INTERNAL_SERVER_ERROR
-            );
+                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

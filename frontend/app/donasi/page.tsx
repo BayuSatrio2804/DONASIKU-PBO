@@ -48,7 +48,7 @@ const MAX_DESC_LENGTH = 200;
 export default function DashboardDonasi() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [requestSearch, setRequestSearch] = useState('');
   const [locationSearch, setLocationSearch] = useState('');
@@ -58,7 +58,7 @@ export default function DashboardDonasi() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   // Toast state
-  const [toast, setToast] = useState<{message: string; kind: 'success' | 'error' | 'info'} | null>(null);
+  const [toast, setToast] = useState<{ message: string; kind: 'success' | 'error' | 'info' } | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
   const showToast = (message: string, kind: 'success' | 'error' | 'info' = 'info') => {
     setToast({ message, kind });
@@ -77,7 +77,7 @@ export default function DashboardDonasi() {
   }, []);
 
   /* ===== FILTERED DATA ===== */
-  const filteredRequests = SAMPLE_REQUESTS.filter(request => 
+  const filteredRequests = SAMPLE_REQUESTS.filter(request =>
     request.title.toLowerCase().includes(requestSearch.toLowerCase()) ||
     request.location.toLowerCase().includes(requestSearch.toLowerCase())
   );
@@ -183,7 +183,7 @@ export default function DashboardDonasi() {
       uploadedFile: uploadedFile ? uploadedFile.name : 'No file',
       donasiItems,
     });
-    
+
     showToast('Fitur preview akan ditampilkan di sini', 'info');
   };
 
@@ -208,30 +208,30 @@ export default function DashboardDonasi() {
 
     if (confirmDonation) {
       showToast('Donasi berhasil disubmit! Terima kasih atas kontribusi Anda.', 'success');
-      
+
       // Reset form
       setDonasiItems([]);
       setProductName('');
       setProductDesc('');
       setLocationSearch('');
       setUploadedFile(null);
-      
+
       // Navigate to success page or refresh
       router.push('/donasi/success');
     }
   };
 
   /* ===== KEYDOWN HANDLER ===== */
-const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    handleAddDonation();
-  }
-};
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleAddDonation();
+    }
+  };
 
-const [activeTab, setActiveTab] = useState('home');
 
-/* ===== RENDER ===== */
+
+  /* ===== RENDER ===== */
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       {toast && (
@@ -240,7 +240,7 @@ const [activeTab, setActiveTab] = useState('home');
         </div>
       )}
       {/* Top Header */}
-      <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white pt-6 pb-12">
+      <div className="bg-primary text-white pt-6 pb-12">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-xl font-bold">Barang Donasiku</h1>
@@ -312,7 +312,7 @@ const [activeTab, setActiveTab] = useState('home');
                 className="hidden"
                 accept=".jpg,.jpeg,.png,.pdf"
               />
-              
+
               <div className="w-20 h-20 mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center">
                 {uploadedFile ? (
                   <span className="text-green-600 text-3xl">✓</span>
@@ -320,7 +320,7 @@ const [activeTab, setActiveTab] = useState('home');
                   <span className="text-blue-900 text-3xl">⬆️</span>
                 )}
               </div>
-              
+
               {uploadedFile ? (
                 <>
                   <p className="text-gray-900 font-medium truncate">{uploadedFile.name}</p>
@@ -570,7 +570,7 @@ const [activeTab, setActiveTab] = useState('home');
             <button
               type="button"
               className="w-full border-2 border-orange-500 text-orange-600 py-3 rounded-full mt-6 hover:bg-orange-50 transition-colors font-semibold"
-              onClick={() => showToast('Fitur lihat semua permintaan', 'info')} 
+              onClick={() => showToast('Fitur lihat semua permintaan', 'info')}
             >
               Lihat Semua Permintaan
             </button>
@@ -584,7 +584,7 @@ const [activeTab, setActiveTab] = useState('home');
             <button
               type="button"
               className="text-blue-900 hover:text-blue-700 text-sm font-medium"
-              onClick={() => showToast('Fitur lihat semua barang', 'info')} 
+              onClick={() => showToast('Fitur lihat semua barang', 'info')}
             >
               Lihat semua →
             </button>
@@ -619,13 +619,12 @@ const [activeTab, setActiveTab] = useState('home');
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600 bg-gray-100 px-2 py-1 rounded">{item.category}</span>
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      item.condition === 'Baru'
-                        ? 'bg-green-100 text-green-800'
-                        : item.condition === 'Baik'
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${item.condition === 'Baru'
+                      ? 'bg-green-100 text-green-800'
+                      : item.condition === 'Baik'
                         ? 'bg-blue-100 text-blue-800'
                         : 'bg-yellow-100 text-yellow-800'
-                    }`}
+                      }`}
                   >
                     {item.condition}
                   </span>
@@ -635,65 +634,7 @@ const [activeTab, setActiveTab] = useState('home');
           </div>
         </div>
         {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200">
-        <div className="max-w-md mx-auto px-4 py-4 flex items-center justify-around">
-          <button
-            onClick={() => setActiveTab('home')}
-            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-colors ${
-              activeTab === 'home'
-                ? 'text-blue-900'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-2xl">🏠</span>
-            <span className="text-xs font-semibold">Home</span>
-          </button>
-
-          <button
-            onClick={() => { setActiveTab('donate'); router.push('/donasi'); }}
-            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-colors ${
-              activeTab === 'donate'
-                ? 'text-blue-900'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-2xl">❤️</span>
-            <span className="text-xs font-semibold">Donasi</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab('riwayat');
-              router.push('/riwayat');
-            }}
-            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-colors ${
-              activeTab === 'riwayat'
-                ? 'text-blue-900'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-2xl">⏱️</span>
-            <span className="text-xs font-semibold">Riwayat</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab('profile');
-              router.push('/profile');
-            }}
-            className={`flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-colors ${
-              activeTab === 'profile'
-                ? 'text-blue-900'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <span className="text-2xl">👤</span>
-            <span className="text-xs font-semibold">Profile</span>
-          </button>
-        </div>
-      </div>
       </main>
-      
     </div>
   );
 }
