@@ -26,7 +26,7 @@ export default function LoginPage() {
       }
 
       // Call API to login
-      const response = await fetch('http://localhost:8090/api/auth/login', {
+      const response = await fetch('http://localhost:8080/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,8 +56,10 @@ export default function LoginPage() {
       localStorage.setItem('userSession', JSON.stringify(sessionData));
       console.log('Login success:', sessionData);
 
+      // Redirect ke dashboard yang sesuai berdasarkan role
+      const dashboardUrl = sessionData.role === 'admin' ? '/admin/dashboard' : '/dashboard';
       setTimeout(() => {
-        router.push('/dashboard');
+        router.push(dashboardUrl);
       }, 500);
     } catch (err: any) {
       setError(err.message || 'Login gagal. Silakan coba lagi.');
