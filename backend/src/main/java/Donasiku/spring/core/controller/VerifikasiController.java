@@ -48,7 +48,8 @@ public class VerifikasiController {
             System.err.println("== UPLOAD FAILED: " + e.getMessage());
             e.printStackTrace();
             return new ResponseEntity<>(
-                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
+                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage(), null, null, null,
+                            null),
                     HttpStatus.BAD_REQUEST);
         }
     }
@@ -64,7 +65,8 @@ public class VerifikasiController {
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(
-                    new VerifikasiResponse(null, null, null, null, null, "NOT_FOUND", e.getMessage()),
+                    new VerifikasiResponse(null, null, null, null, null, "NOT_FOUND", e.getMessage(), null, null, null,
+                            null),
                     HttpStatus.NOT_FOUND);
         }
     }
@@ -80,7 +82,8 @@ public class VerifikasiController {
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(
-                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
+                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage(), null, null, null,
+                            null),
                     HttpStatus.NOT_FOUND);
         }
     }
@@ -95,10 +98,11 @@ public class VerifikasiController {
             verifikasiService.deleteDokumenVerifikasi(userId);
             return ResponseEntity.ok(
                     new VerifikasiResponse(null, userId, null, null, null, "DELETED",
-                            "Dokumen verifikasi berhasil dihapus"));
+                            "Dokumen verifikasi berhasil dihapus", null, null, null, null));
         } catch (RuntimeException e) {
             return new ResponseEntity<>(
-                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
+                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage(), null, null, null,
+                            null),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -114,7 +118,8 @@ public class VerifikasiController {
             return ResponseEntity.ok(responses);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(
-                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
+                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage(), null, null, null,
+                            null),
                     HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -138,7 +143,8 @@ public class VerifikasiController {
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(
-                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage()),
+                    new VerifikasiResponse(null, null, null, null, null, "ERROR", e.getMessage(), null, null, null,
+                            null),
                     HttpStatus.BAD_REQUEST);
         }
     }

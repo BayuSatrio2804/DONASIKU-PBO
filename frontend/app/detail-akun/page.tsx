@@ -8,47 +8,64 @@ export default function DetailAkunPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ username: string, role: string, userId: number } | null>(null);
   const [isVerified, setIsVerified] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error', title: string, message: string } | null>(null);
 
   // Load User & Status
   useEffect(() => {
-    const sessionStr = localStorage.getItem('userSession');
-    if (sessionStr) {
-      try {
-        const userData = JSON.parse(sessionStr);
-        setUser(userData);
+    const initializeUser = async () => {
+      const sessionStr = localStorage.getItem('userSession');
+      if (sessionStr) {
+        try {
+          const userData = JSON.parse(sessionStr);
+          setUser(userData);
 
-        // Fetch Status from Backend if user exists
-        if (userData.userId) {
-          checkVerificationStatus(userData.userId);
+          // Fetch Status from Backend if user exists
+          if (userData.userId) {
+            await checkVerificationStatus(userData.userId);
+          }
+        } catch (e) {
+          console.error("Initialize error:", e);
         }
-      } catch (e) {
-        console.error(e);
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+
+    initializeUser();
   }, []);
 
   const checkVerificationStatus = async (userId: number) => {
     try {
+      console.log(`[DEBUG] Fetching status for userId: ${userId}`);
       const res = await fetch(`http://localhost:8080/api/verifikasi/${userId}/status`);
+      
       if (res.ok) {
         const data = await res.json();
-        // Check exact status string from backend
-        if (data.status === "Dokumen sudah diupload, menunggu verifikasi" || data.status.includes("Terverifikasi")) {
+        console.log(`[DEBUG] API Response:`, data);
+        
+        setVerificationStatus(data.status);
+        
+        // Only set verified if status is exactly "terverifikasi"
+        if (data.status === "terverifikasi") {
+          console.log("[DEBUG] Status is terverifikasi - setting isVerified to true");
           setIsVerified(true);
         } else {
+          console.log(`[DEBUG] Status is ${data.status} - setting isVerified to false`);
           setIsVerified(false);
         }
       } else {
+        console.log(`[DEBUG] API returned ${res.status} status`);
         setIsVerified(false);
+        setVerificationStatus("error");
       }
     } catch (error) {
-      console.error("Status check failed", error);
+      console.error("[ERROR] Status check failed:", error);
       setIsVerified(false);
+      setVerificationStatus("error");
     }
   };
 
@@ -70,22 +87,44 @@ export default function DetailAkunPage() {
       formData.append('userId', user.userId.toString());
       formData.append('file', selectedFile);
 
+      console.log(`[DEBUG] Uploading file for userId: ${user.userId}`);
       const res = await fetch(`http://localhost:8080/api/verifikasi/upload`, {
         method: 'POST',
         body: formData,
       });
 
       if (res.ok) {
-        alert('Dokumen berhasil diunggah! Menunggu verifikasi dari admin.');
-        setIsVerified(false);
+        const uploadResponse = await res.json();
+        console.log(`[DEBUG] Upload successful:`, uploadResponse);
+        
+        setNotification({
+          type: 'success',
+          title: '✅ Upload Berhasil!',
+          message: 'Dokumen verifikasi Anda telah diunggah. Admin akan segera memeriksanya.'
+        });
+        
+        setSelectedFile(null);
         setShowUploadModal(false);
-        checkVerificationStatus(user.userId);
+        
+        // Reset state dan refetch status
+        setIsVerified(false);
+        setVerificationStatus("menunggu_verifikasi");
+        
+        // Wait a bit then refetch to get updated status
+        setTimeout(() => {
+          checkVerificationStatus(user.userId);
+        }, 1000);
       } else {
-        const errorData = await res.json().catch(() => ({}));
-        alert(`Gagal mengunggah: ${errorData.message || 'Error server'}`);
+        const errorData = await res.json().catch(() => ({ message: 'Unknown error' }));
+        console.error(`[ERROR] Upload failed:`, errorData);
+        setNotification({
+          type: 'error',
+          title: '❌ Upload Gagal',
+          message: errorData.message || 'Terjadi kesalahan saat mengunggah dokumen. Silahkan coba lagi.'
+        });
       }
     } catch (error) {
-      console.error("Upload error", error);
+      console.error("[ERROR] Upload error:", error);
       alert('Terjadi kesalahan saat mengupload dokumen.');
     } finally {
       setUploading(false);
@@ -103,14 +142,26 @@ export default function DetailAkunPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 py-4 px-4 flex items-center gap-4 sticky top-0 z-10">
-        <button
-          onClick={() => router.back()}
-          className="text-2xl text-black hover:bg-gray-100 p-2 rounded-lg transition-colors"
-        >
-          &lt;
-        </button>
-        <h1 className="text-xl font-bold text-gray-900">Detail Akun</h1>
+      <div className="bg-white border-b border-gray-200 py-4 px-4 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="text-2xl text-black hover:bg-gray-100 p-2 rounded-lg transition-colors"
+          >
+            &lt;
+          </button>
+          <h1 className="text-xl font-bold text-gray-900">Detail Akun</h1>
+        </div>
+        {/* Refresh Status Button */}
+        {user?.role === 'penerima' && (
+          <button
+            onClick={() => user.userId && checkVerificationStatus(user.userId)}
+            className="text-sm px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-semibold"
+            title="Refresh status verifikasi"
+          >
+            🔄 Refresh
+          </button>
+        )}
       </div>
 
       {/* Main Content */}
@@ -149,26 +200,36 @@ export default function DetailAkunPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold text-gray-900 capitalize">{user?.role || '-'}</span>
 
-                  {isVerified ? (
-                    <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                      ✓ Terverifikasi
-                    </span>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="bg-gray-100 text-gray-500 text-xs px-2 py-1 rounded-full">
+                  {/* Verification Status Display */}
+                  <div className="flex items-center gap-2">
+                    {isVerified ? (
+                      <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full flex items-center gap-1 font-semibold">
+                        ✓ Terverifikasi
+                      </span>
+                    ) : verificationStatus === "menunggu_verifikasi" ? (
+                      <span className="bg-yellow-100 text-yellow-700 text-xs px-3 py-1 rounded-full flex items-center gap-1 font-semibold">
+                        ⏳ Menunggu Verifikasi
+                      </span>
+                    ) : verificationStatus === "ditolak" ? (
+                      <span className="bg-red-100 text-red-700 text-xs px-3 py-1 rounded-full flex items-center gap-1 font-semibold">
+                        ✗ Ditolak
+                      </span>
+                    ) : (
+                      <span className="bg-gray-100 text-gray-600 text-xs px-3 py-1 rounded-full font-semibold">
                         Belum Terverifikasi
                       </span>
-                      {/* Only show upload button for Penerima if not verified */}
-                      {user?.role === 'penerima' && (
-                        <button
-                          onClick={() => setShowUploadModal(true)}
-                          className="text-xs text-blue-600 underline font-semibold"
-                        >
-                          Unggah Dokumen
-                        </button>
-                      )}
-                    </div>
-                  )}
+                    )}
+                    
+                    {/* Upload button for unverified penerima */}
+                    {user?.role === 'penerima' && !isVerified && (
+                      <button
+                        onClick={() => setShowUploadModal(true)}
+                        className="text-xs text-blue-600 underline font-semibold hover:text-blue-800"
+                      >
+                        Unggah Dokumen
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -252,6 +313,33 @@ export default function DetailAkunPage() {
                 {uploading ? 'Mengunggah...' : 'Kirim'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Modal */}
+      {notification && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-sm">
+          <div className={`bg-white rounded-3xl p-8 w-full max-w-sm text-center shadow-2xl ${
+            notification.type === 'success' ? 'border-2 border-green-200' : 'border-2 border-red-200'
+          }`}>
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
+              notification.type === 'success' ? 'bg-green-100' : 'bg-red-100'
+            }`}>
+              <span className="text-4xl">{notification.type === 'success' ? '✅' : '❌'}</span>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">{notification.title}</h3>
+            <p className="text-gray-600 mb-6">{notification.message}</p>
+            <button
+              onClick={() => setNotification(null)}
+              className={`w-full py-3 rounded-xl font-bold text-white shadow-lg transition-colors ${
+                notification.type === 'success'
+                  ? 'bg-green-500 hover:bg-green-600 shadow-green-200'
+                  : 'bg-red-500 hover:bg-red-600 shadow-red-200'
+              }`}
+            >
+              OK
+            </button>
           </div>
         </div>
       )}

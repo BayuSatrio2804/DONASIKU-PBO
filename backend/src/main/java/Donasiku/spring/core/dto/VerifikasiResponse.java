@@ -17,4 +17,10 @@ public class VerifikasiResponse {
     private LocalDateTime uploadedAt;
     private String status;
     private String message;
+
+    // Additional User Info for Admin
+    private String username;
+    private String email;
+    private String noTelepon;
+    private String alamat;
 }

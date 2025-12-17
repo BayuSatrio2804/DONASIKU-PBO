@@ -8,6 +8,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<{ username: string, role: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pendingVerifikasiCount, setPendingVerifikasiCount] = useState(0);
 
   useEffect(() => {
     // Check auth
@@ -25,6 +26,7 @@ export default function AdminDashboardPage() {
         return;
       }
       setUser(userData);
+      fetchPendingCount();
     } catch (e) {
       console.error("Invalid session", e);
       router.push('/auth/login');
@@ -32,6 +34,18 @@ export default function AdminDashboardPage() {
       setLoading(false);
     }
   }, [router]);
+
+  const fetchPendingCount = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/api/verifikasi/admin/pending');
+      if (res.ok) {
+        const data = await res.json();
+        setPendingVerifikasiCount(Array.isArray(data) ? data.length : 0);
+      }
+    } catch (error) {
+      console.error('Failed to fetch pending count', error);
+    }
+  };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading...</div>;
 
@@ -72,7 +86,7 @@ export default function AdminDashboardPage() {
               <p className="text-primary/70 text-xs font-medium">Total Penerima</p>
             </div>
             <div className="bg-red-50 p-4 rounded-2xl border border-red-200">
-              <h4 className="text-red-900 font-bold text-2xl mb-1">0</h4>
+              <h4 className="text-red-900 font-bold text-2xl mb-1">{pendingVerifikasiCount}</h4>
               <p className="text-red-700 text-xs font-medium">Menunggu Verifikasi</p>
             </div>
           </div>
@@ -82,14 +96,21 @@ export default function AdminDashboardPage() {
         <section>
           <h3 className="font-bold text-lg text-gray-900 mb-4">Kelola Sistem</h3>
           <div className="space-y-3">
-            <button className="w-full bg-white border border-gray-200 rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-primary hover:shadow-md transition-all group">
+            <button 
+              onClick={() => router.push('/admin/verifikasi')}
+              className="w-full bg-white border border-gray-200 rounded-2xl p-4 flex items-center justify-between shadow-sm hover:border-primary hover:shadow-md transition-all group">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-lg group-hover:bg-primary/20 transition-colors">
                   ✓
                 </div>
                 <div className="text-left">
                   <h4 className="font-bold text-gray-900">Verifikasi Penerima</h4>
-                  <p className="text-xs text-gray-500">Review dokumen dan data penerima</p>
+                  <p className="text-xs text-gray-500">
+                    {pendingVerifikasiCount > 0 
+                      ? `${pendingVerifikasiCount} dokumen menunggu verifikasi`
+                      : 'Semua dokumen terverifikasi'
+                    }
+                  </p>
                 </div>
               </div>
               <span className="text-gray-300 group-hover:text-primary transition-colors text-xl">→</span>

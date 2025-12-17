@@ -73,7 +73,9 @@ public class VerifikasiService {
             }
 
             dokumen.setNamaFile(file.getOriginalFilename());
-            dokumen.setFilePath(filePath.toString());
+            // Store relative URL path (convert backslash to forward slash for web URLs)
+            String urlPath = "/" + uploadDir.replace("\\", "/") + fileName;
+            dokumen.setFilePath(urlPath);
             dokumen.setUploadedAt(LocalDateTime.now());
             // Status awal: menunggu verifikasi dari admin
             dokumen.setStatusVerifikasi("menunggu_verifikasi");
@@ -104,6 +106,9 @@ public class VerifikasiService {
     /**
      * Check status verifikasi user
      */
+    /**
+     * Check status verifikasi user
+     */
     public VerifikasiResponse getStatusVerifikasi(Integer userId) {
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
@@ -116,6 +121,12 @@ public class VerifikasiService {
         VerifikasiResponse response = new VerifikasiResponse();
         response.setPenerimaUserId(userId);
 
+        // Populate User Info
+        response.setUsername(user.getUsername());
+        response.setEmail(user.getEmail());
+        response.setNoTelepon(user.getNoTelepon());
+        response.setAlamat(user.getAlamat());
+
         if (dokumen.isPresent()) {
             DokumenVerifikasi doc = dokumen.get();
             response.setDokumenVerifikasiId(doc.getDokumenVerifikasiId());
@@ -123,7 +134,8 @@ public class VerifikasiService {
             response.setFilePath(doc.getFilePath());
             response.setUploadedAt(doc.getUploadedAt());
             response.setStatus(doc.getStatusVerifikasi() != null ? doc.getStatusVerifikasi() : "menunggu_verifikasi");
-            response.setMessage("Status verifikasi: " + (doc.getStatusVerifikasi() != null ? doc.getStatusVerifikasi() : "menunggu_verifikasi"));
+            response.setMessage("Status verifikasi: "
+                    + (doc.getStatusVerifikasi() != null ? doc.getStatusVerifikasi() : "menunggu_verifikasi"));
         } else {
             response.setStatus("Belum ada dokumen verifikasi");
             response.setMessage("User belum melakukan upload dokumen");
@@ -182,6 +194,20 @@ public class VerifikasiService {
     }
 
     private VerifikasiResponse mapToResponse(DokumenVerifikasi dokumen, String message) {
+        String username = "-";
+        String email = "-";
+        String noTelepon = "-";
+        String alamat = "-";
+
+        Optional<User> userOpt = userRepository.findById(dokumen.getPenerimaUserId());
+        if (userOpt.isPresent()) {
+            User u = userOpt.get();
+            username = u.getUsername();
+            email = u.getEmail();
+            noTelepon = u.getNoTelepon();
+            alamat = u.getAlamat();
+        }
+
         return new VerifikasiResponse(
                 dokumen.getDokumenVerifikasiId(),
                 dokumen.getPenerimaUserId(),
@@ -189,6 +215,10 @@ public class VerifikasiService {
                 dokumen.getFilePath(),
                 dokumen.getUploadedAt(),
                 dokumen.getStatusVerifikasi() != null ? dokumen.getStatusVerifikasi() : "menunggu_verifikasi",
-                message);
+                message,
+                username,
+                email,
+                noTelepon,
+                alamat);
     }
 }
