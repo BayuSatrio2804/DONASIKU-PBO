@@ -19,4 +19,4 @@ Berikut adalah daftar *Functional Requirements* (FR) yang berada di bawah tanggu
 ---
 
 **Last Updated:** 17 Desember 2025  
-**Developer:** [Nama Kamu]
+**Developer:** Mazkad12
