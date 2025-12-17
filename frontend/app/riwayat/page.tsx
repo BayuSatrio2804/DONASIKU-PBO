@@ -148,12 +148,15 @@ const statusLabels = {
 export default function RiwayatPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('barang');
-  const [donations] = useState<DonationItem[]>(donationData);
+  const [donations, setDonations] = useState<DonationItem[]>(donationData);
   const [chats] = useState<ChatItem[]>(chatData);
   const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedDonation, setSelectedDonation] = useState<DonationItem | null>(null);
+  const [newStatus, setNewStatus] = useState<'selesai' | 'dikirim' | 'dibatalkan' | ''>('');
 
   const handleChatClick = (chat: ChatItem) => {
     setSelectedChat(chat);
@@ -180,6 +183,34 @@ export default function RiwayatPage() {
   const handleBackFromChat = () => {
     setSelectedChat(null);
     setMessages([]);
+  };
+
+  const handleOpenStatusModal = (donation: DonationItem) => {
+    setSelectedDonation(donation);
+    setNewStatus(donation.status);
+    setShowStatusModal(true);
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!selectedDonation || !newStatus) return;
+
+    // Update local state
+    setDonations(donations.map(d => 
+      d.id === selectedDonation.id 
+        ? { ...d, status: newStatus as 'selesai' | 'dikirim' | 'dibatalkan' }
+        : d
+    ));
+
+    // TODO: POST ke backend
+    // const response = await fetch(`http://localhost:8080/api/donasi/${selectedDonation.id}/status`, {
+    //   method: 'PUT',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ status: newStatus })
+    // });
+
+    setShowStatusModal(false);
+    setSelectedDonation(null);
+    setNewStatus('');
   };
 
   const filteredChats = chats.filter((chat) =>
@@ -372,6 +403,12 @@ export default function RiwayatPage() {
                       <p className="text-sm font-medium text-gray-900">
                         {donation.quantity} Pcs
                       </p>
+                      <button
+                        onClick={() => handleOpenStatusModal(donation)}
+                        className="mt-4 bg-primary text-white text-xs px-4 py-2 rounded-full hover:opacity-90 transition-opacity"
+                      >
+                        Update Status
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -432,6 +469,66 @@ export default function RiwayatPage() {
 
       {/* Bottom Navigation */}
 
+      {/* Status Update Modal */}
+      {showStatusModal && selectedDonation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-sm mx-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Update Status Donasi
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              {selectedDonation.itemName} × {selectedDonation.quantity}
+            </p>
+
+            <div className="space-y-3 mb-6">
+              {(['dikirim', 'selesai', 'dibatalkan'] as const).map((status) => (
+                <label
+                  key={status}
+                  className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-colors"
+                  style={{
+                    borderColor: newStatus === status ? '#00306C' : '#e5e7eb',
+                    backgroundColor: newStatus === status ? '#E6ECFC' : 'transparent',
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="status"
+                    value={status}
+                    checked={newStatus === status}
+                    onChange={(e) => setNewStatus(e.target.value as any)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm font-medium text-gray-900 capitalize">
+                    {statusLabels[status]}
+                  </span>
+                  <span className={`ml-auto text-xs px-2 py-1 rounded-full ${statusStyles[status]}`}>
+                    {statusLabels[status]}
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowStatusModal(false);
+                  setSelectedDonation(null);
+                  setNewStatus('');
+                }}
+                className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleUpdateStatus}
+                className="flex-1 px-4 py-2 rounded-lg bg-primary text-white hover:opacity-90 transition-opacity"
+              >
+                Update
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

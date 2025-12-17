@@ -45,13 +45,8 @@ export default function DashboardDonasi() {
       <div className="bg-primary text-white pt-6 pb-12">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-bold">Barang Donasiku</h1>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="text-white hover:text-gray-200 font-medium text-sm transition"
-            >
-              ← Kembali
-            </button>
+            <h1 className="text-xl font-bold">Penerimaan Barang</h1>
+           
           </div>
         </div>
       </div>
@@ -70,13 +65,13 @@ export default function DashboardDonasi() {
 
       <div className="p-5">
         <h3 className="text-lg font-bold mb-2 text-gray-800">
-          Donasi Barang
+          Lihat Barang Donasi
         </h3>
         <p className="text-sm text-gray-600 mb-5">
-          Berikan barang di sini untuk didonasikan kepada yang membutuhkan
+          Cari barang kebutuhan dari yang diberikan para donatur
         </p>
 <button
-  onClick={() => router.push('/donasiBarang')}
+  onClick={() => router.push('/produkDonasi')}
   className="w-full bg-primary text-white py-2 rounded-lg font-semibold hover:bg-primary/90 transition"
 >
   Mulai Donasi
@@ -97,10 +92,10 @@ export default function DashboardDonasi() {
           Permintaan Barang
         </h3>
         <p className="text-sm text-gray-600 mb-5">
-          Cari di sini untuk melihat kebutuhan yang diperlukan oleh orang lain
+          Ajukan kebutuhan barang yang diperlukan kepada donatur
         </p>
 <button
-  onClick={() => router.push('/permintaanBarang')}
+  onClick={() => router.push('/pengajuanBarang')}
   className="w-full bg-primary text-white py-2 rounded-lg font-semibold hover:bg-primary/90 transition"
 >
   Cari Permintaan

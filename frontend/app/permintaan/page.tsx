@@ -1,13 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const MAX_TITLE_LENGTH = 50;
 const MAX_DESC_LENGTH = 200;
 
 export default function BuatPermintaanPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const donasiId = searchParams.get('donasi');
+    const namaBarang = searchParams.get('barang');
+
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState('');
@@ -16,6 +20,14 @@ export default function BuatPermintaanPage() {
     const [isUrgent, setIsUrgent] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        // Auto-fill nama barang jika dari donasi
+        if (namaBarang) {
+            setTitle(decodeURIComponent(namaBarang));
+            setCategory('Dari Donasi');
+        }
+    }, [namaBarang]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,7 +65,8 @@ export default function BuatPermintaanPage() {
                 penerima: {
                     userId: userData.userId
                 },
-                status: isUrgent ? 'Urgent' : 'Open'
+                status: isUrgent ? 'Urgent' : 'Open',
+                ...(donasiId && { donasiId: parseInt(donasiId) })
             };
 
             const response = await fetch('http://localhost:8080/api/permintaan', {

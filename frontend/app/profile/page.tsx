@@ -191,7 +191,7 @@ export default function ProfilePage() {
       {/* Custom Logout Confirmation Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-[2rem] p-6 w-full max-w-sm text-center shadow-2xl transform scale-100 animate-scaleIn">
+          <div className="bg-white rounded-4xl p-6 w-full max-w-sm text-center shadow-2xl transform scale-100 animate-scaleIn">
             <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-4xl">🚪</span>
             </div>
@@ -219,7 +219,7 @@ export default function ProfilePage() {
       {/* Role Guidelines Modal */}
       {showRoleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-[2rem] p-0 w-full max-w-md shadow-2xl transform scale-100 animate-scaleIn overflow-hidden max-h-[80vh] flex flex-col">
+          <div className="bg-white rounded-4xl p-0 w-full max-w-md shadow-2xl transform scale-100 animate-scaleIn overflow-hidden max-h-[80vh] flex flex-col">
             {/* Modal Header */}
             <div className="bg-blue-900 p-6 text-white relative">
               <h3 className="text-xl font-bold text-center">Ketentuan Role</h3>
