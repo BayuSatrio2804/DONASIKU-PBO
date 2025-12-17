@@ -10,6 +10,8 @@ export default function DashboardPage() {
   const [user, setUser] = useState<{ username: string, role: string, userId?: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [permintaan, setPermintaan] = useState<any[]>([]);
+  const [donasiSaya, setDonasiSaya] = useState<any[]>([]);
+  const [allPermintaan, setAllPermintaan] = useState<any[]>([]);
 
   useEffect(() => {
     // Check auth
@@ -26,6 +28,12 @@ export default function DashboardPage() {
       // Fetch permintaan untuk penerima
       if (userData.role?.toLowerCase() === 'penerima' && userData.userId) {
         fetchPermintaan();
+      }
+      
+      // Fetch data untuk donatur
+      if (userData.role?.toLowerCase() === 'donatur' && userData.userId) {
+        fetchDonasiSaya(userData.userId);
+        fetchAllPermintaan();
       }
     } catch (e) {
       console.error("Invalid session", e);
@@ -46,6 +54,32 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error('Error fetching permintaan:', err);
+    }
+  };
+
+  const fetchDonasiSaya = async (userId: number) => {
+    try {
+      const response = await fetch('http://localhost:8080/api/donasi');
+      if (response.ok) {
+        const data = await response.json();
+        // Filter donasi yang dibuat oleh user (donatur)
+        const userDonasi = data.filter((donasi: any) => donasi.donatur?.userId === userId);
+        setDonasiSaya(userDonasi);
+      }
+    } catch (err) {
+      console.error('Error fetching donasi saya:', err);
+    }
+  };
+
+  const fetchAllPermintaan = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/permintaan');
+      if (response.ok) {
+        const data = await response.json();
+        setAllPermintaan(data);
+      }
+    } catch (err) {
+      console.error('Error fetching all permintaan:', err);
     }
   };
 
@@ -176,25 +210,97 @@ export default function DashboardPage() {
               <span className="text-gray-300 group-hover:text-primary transition-colors text-xl">→</span>
             </button>
 
+            {/* DONASI SAYA SECTION */}
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-xl text-gray-800">Disekitar Anda</h3>
+                <h3 className="font-bold text-xl text-gray-800">📦 Donasi Saya</h3>
                 <Link href="/donasi" className="text-primary text-sm font-semibold">Lihat Semua</Link>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-                    <div className="h-32 bg-gray-200 relative">
-                      {/* Placeholder Image */}
-                      <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-2xl">📦</div>
-                    </div>
-                    <div className="p-3">
-                      <h5 className="font-bold text-gray-900 text-sm truncate">Bantuan #12{i}</h5>
-                      <p className="text-xs text-gray-500">📍 Bandung</p>
-                    </div>
+              {donasiSaya.length === 0 ? (
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
+                    📦
                   </div>
-                ))}
+                  <p className="font-medium text-gray-900">Belum ada donasi</p>
+                  <p className="text-sm text-gray-500 mt-2 mb-4">Mulai berbagi barang berkualitas untuk membantu sesama.</p>
+                  <Link href="/donasi" className="text-primary font-semibold border border-primary/20 px-4 py-2 rounded-full hover:bg-primary/5 inline-block">
+                    Buat Donasi
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {donasiSaya.slice(0, 3).map((item: any) => (
+                    <Link key={item.donasiId} href={`/donasi/${item.donasiId}`}>
+                      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-gray-900">{item.kategori || 'Donasi'}</h4>
+                            <p className="text-xs text-gray-500 mt-1">📍 {item.lokasi?.alamatLengkap || 'Lokasi tidak tersedia'}</p>
+                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsi || 'Tidak ada deskripsi'}</p>
+                            <div className="flex gap-2 mt-3">
+                              <span className="inline-block bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-semibold">
+                                {item.statusDonasi?.status || 'Pending'}
+                              </span>
+                              <span className="inline-block bg-yellow-50 text-yellow-700 text-xs px-2 py-1 rounded-full">
+                                {item.penerima ? '✓ Ada Penerima' : 'Menunggu'}
+                              </span>
+                            </div>
+                          </div>
+                          <button className="text-gray-400 hover:text-gray-600 text-xl">→</button>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* PERMINTAAN BARANG SECTION */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-xl text-gray-800">🤲 Permintaan Barang</h3>
+                <Link href="/permintaan" className="text-primary text-sm font-semibold">Lihat Semua</Link>
               </div>
+              {allPermintaan.length === 0 ? (
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+                  <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
+                    🤲
+                  </div>
+                  <p className="font-medium text-gray-900">Tidak ada permintaan saat ini</p>
+                  <p className="text-sm text-gray-500 mt-2">Cek kembali nanti untuk melihat permintaan dari penerima manfaat.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {allPermintaan.slice(0, 3).map((item: any) => (
+                    <Link key={item.permintaanId} href={`/permintaan/${item.permintaanId}`}>
+                      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-green-500/50 transition-all cursor-pointer">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-gray-900">{item.jenisBarang}</h4>
+                              <span className="inline-block bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-semibold">
+                                x{item.jumlah}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">👤 {item.penerima?.username || 'Penerima'}</p>
+                            <p className="text-xs text-gray-500">📍 {item.lokasi?.alamatLengkap || 'Lokasi tidak tersedia'}</p>
+                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsiKebutuhan}</p>
+                            <div className="flex gap-2 mt-3">
+                              <span className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full font-semibold">
+                                {item.status || 'Buka'}
+                              </span>
+                              <span className="inline-block text-green-600 text-xs">
+                                📅 {new Date(item.createdAt).toLocaleDateString('id-ID')}
+                              </span>
+                            </div>
+                          </div>
+                          <button className="text-gray-400 hover:text-gray-600 text-xl">→</button>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </section>
           </div>
         )}

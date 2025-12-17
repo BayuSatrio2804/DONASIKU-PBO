@@ -55,7 +55,9 @@ export default function DashboardDonasi() {
   const [donasiItems, setDonasiItems] = useState<DonationItem[]>([]);
   const [productName, setProductName] = useState('');
   const [productDesc, setProductDesc] = useState('');
+  const [quantity, setQuantity] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Toast state
   const [toast, setToast] = useState<{ message: string; kind: 'success' | 'error' | 'info' } | null>(null);
@@ -170,24 +172,106 @@ export default function DashboardDonasi() {
     }
   };
 
-  const handlePreview = () => {
+  const handlePreview = async () => {
     if (!productName.trim() || !productDesc.trim()) {
       showToast('Lengkapi nama dan deskripsi produk terlebih dahulu', 'error');
       return;
     }
 
-    console.log('Preview data:', {
-      productName,
-      productDesc,
-      location: locationSearch,
-      uploadedFile: uploadedFile ? uploadedFile.name : 'No file',
-      donasiItems,
-    });
+    if (donasiItems.length === 0) {
+      showToast('Tambahkan minimal satu barang untuk didonasikan', 'error');
+      return;
+    }
 
-    showToast('Fitur preview akan ditampilkan di sini', 'info');
+    if (!locationSearch.trim()) {
+      showToast('Masukkan lokasi pengambilan terlebih dahulu', 'error');
+      return;
+    }
+
+    if (!quantity.trim() || parseInt(quantity) <= 0) {
+      showToast('Masukkan jumlah barang yang valid', 'error');
+      return;
+    }
+
+    // Show preview confirmation
+    const previewData = `
+PREVIEW DONASI BARANG
+━━━━━━━━━━━━━━━━━━━━━━
+📦 Nama: ${productName}
+📝 Deskripsi: ${productDesc}
+🔢 Jumlah: ${quantity}
+📍 Lokasi: ${locationSearch}
+🖼️ Foto: ${uploadedFile?.name || 'Tidak ada'}
+🎁 Barang (${donasiItems.length}):
+${donasiItems.map(item => `   • ${item.name}`).join('\n')}
+━━━━━━━━━━━━━━━━━━━━━━
+
+Lanjutkan untuk mengirim donasi?`;
+
+    const confirmDonation = window.confirm(previewData);
+
+    if (confirmDonation) {
+      try {
+        // Get user data from localStorage
+        const sessionStr = localStorage.getItem('userSession');
+        if (!sessionStr) {
+          showToast('Session tidak ditemukan. Silakan login ulang.', 'error');
+          return;
+        }
+
+        const userData = JSON.parse(sessionStr);
+
+        // Validate user is donatur
+        if (userData.role?.toLowerCase() !== 'donatur') {
+          showToast('Hanya donatur yang dapat membuat donasi', 'error');
+          return;
+        }
+
+        // Prepare data sesuai dengan DonasiRequest di backend
+        const donasiData = {
+          kategori: productName,
+          deskripsi: productDesc + ` (Jumlah: ${quantity})`,
+          foto: uploadedFile?.name || null,
+          lokasiId: 1,
+          donaturId: userData.userId
+        };
+
+        const response = await fetch('http://localhost:8080/api/donasi', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(donasiData),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          throw new Error(errorData || 'Gagal membuat donasi');
+        }
+
+        showToast('✅ Donasi berhasil disimpan! Terima kasih atas kontribusi Anda.', 'success');
+
+        // Reset form
+        setDonasiItems([]);
+        setProductName('');
+        setProductDesc('');
+        setLocationSearch('');
+        setQuantity('');
+        setUploadedFile(null);
+
+        // Navigate to dashboard after 1.5 seconds
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 1500);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Terjadi kesalahan';
+        showToast('❌ ' + message, 'error');
+        console.error('Error:', err);
+      }
+    }
   };
 
-  const handleStartDonation = () => {
+  const handleStartDonation = async () => {
     if (donasiItems.length === 0) {
       showToast('Tambahkan minimal satu barang untuk didonasikan', 'error');
       return;
@@ -198,26 +282,100 @@ export default function DashboardDonasi() {
       return;
     }
 
+    if (!locationSearch.trim()) {
+      showToast('Masukkan lokasi pengambilan terlebih dahulu', 'error');
+      return;
+    }
+
+    if (!quantity.trim() || parseInt(quantity) <= 0) {
+      showToast('Masukkan jumlah barang yang valid', 'error');
+      return;
+    }
+
     // Show confirmation
     const confirmDonation = window.confirm(
       `Anda akan mendonasikan ${donasiItems.length} barang.\n` +
       `Nama Produk: ${productName}\n` +
-      `Lokasi: ${locationSearch || 'Belum diisi'}\n\n` +
+      `Jumlah: ${quantity}\n` +
+      `Lokasi: ${locationSearch}\n\n` +
       'Apakah Anda yakin ingin melanjutkan?'
     );
 
     if (confirmDonation) {
-      showToast('Donasi berhasil disubmit! Terima kasih atas kontribusi Anda.', 'success');
+      setIsLoading(true);
+      try {
+        // Get user data from localStorage
+        const sessionStr = localStorage.getItem('userSession');
+        if (!sessionStr) {
+          showToast('Session tidak ditemukan. Silakan login ulang.', 'error');
+          setIsLoading(false);
+          return;
+        }
 
-      // Reset form
-      setDonasiItems([]);
-      setProductName('');
-      setProductDesc('');
-      setLocationSearch('');
-      setUploadedFile(null);
+        const userData = JSON.parse(sessionStr);
 
-      // Navigate to success page or refresh
-      router.push('/donasi/success');
+        // Validate user is donatur
+        if (userData.role?.toLowerCase() !== 'donatur') {
+          showToast('Hanya donatur yang dapat membuat donasi', 'error');
+          setIsLoading(false);
+          return;
+        }
+
+        // Validate userId exists
+        if (!userData.userId) {
+          showToast('User ID tidak ditemukan. Silakan login ulang.', 'error');
+          setIsLoading(false);
+          return;
+        }
+
+        // Prepare data sesuai dengan DonasiRequest di backend
+        const donasiData = {
+          kategori: productName.trim(),
+          deskripsi: productDesc.trim(),
+          foto: uploadedFile?.name || null,
+          lokasiId: 1,
+          donaturId: userData.userId
+        };
+
+        console.log('Sending donasi data:', donasiData);
+
+        const response = await fetch('http://localhost:8080/api/donasi', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(donasiData),
+        });
+
+        const responseText = await response.text();
+        console.log('Response status:', response.status);
+        console.log('Response body:', responseText);
+
+        if (!response.ok) {
+          throw new Error(responseText || `HTTP Error: ${response.status}`);
+        }
+
+        showToast('✅ Donasi berhasil disimpan! Terima kasih atas kontribusi Anda.', 'success');
+
+        // Reset form
+        setDonasiItems([]);
+        setProductName('');
+        setProductDesc('');
+        setLocationSearch('');
+        setQuantity('');
+        setUploadedFile(null);
+
+        // Navigate to dashboard after 1.5 seconds
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 1500);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Terjadi kesalahan';
+        showToast('❌ ' + message, 'error');
+        console.error('Error:', err);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -417,6 +575,30 @@ export default function DashboardDonasi() {
                 </div>
               </div>
 
+              {/* Quantity */}
+              <div>
+                <label htmlFor="quantity" className="font-medium text-gray-900 block mb-2">
+                  Jumlah Barang
+                </label>
+                <div className="border border-gray-300 rounded-xl p-3 focus-within:border-blue-900 transition-colors">
+                  <div className="flex items-center">
+                    <span className="text-gray-400 mr-3">📦</span>
+                    <input
+                      type="number"
+                      id="quantity"
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      placeholder="Masukkan jumlah barang"
+                      min="1"
+                      className="w-full outline-none text-gray-900 placeholder-gray-500 bg-transparent"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Contoh: 5, 10, 20 (dalam jumlah item)
+                </p>
+              </div>
+
               {/* Product Description */}
               <div>
                 <div className="flex justify-between items-center mb-2">
@@ -466,17 +648,27 @@ export default function DashboardDonasi() {
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <button
                   type="button"
-                  onClick={handleSaveDraft}
-                  disabled={!productName.trim()}
-                  className="flex-1 py-3 border-2 border-blue-900 text-blue-900 font-semibold rounded-xl hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => {
+                    console.log('Button State:', {
+                      isLoading,
+                      productName: productName.trim(),
+                      productDesc: productDesc.trim(),
+                      donasiItems: donasiItems.length,
+                      quantity: quantity.trim(),
+                      disabled: isLoading || !productName.trim() || !productDesc.trim() || donasiItems.length === 0 || !quantity.trim()
+                    });
+                    handleStartDonation();
+                  }}
+                  disabled={isLoading || !productName.trim() || !productDesc.trim() || donasiItems.length === 0 || !quantity.trim()}
+                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Simpan Draft
+                  {isLoading ? 'Sedang Menyimpan...' : 'Simpan Donasi'}
                 </button>
                 <button
                   type="button"
                   onClick={handlePreview}
-                  disabled={!productName.trim() || !productDesc.trim()}
-                  className="flex-1 py-3 bg-blue-900 text-white font-semibold rounded-xl hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isLoading || !productName.trim() || !productDesc.trim() || !quantity.trim()}
+                  className="flex-1 py-3 border-2 border-blue-900 text-blue-900 font-semibold rounded-xl hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Preview
                 </button>
@@ -577,63 +769,7 @@ export default function DashboardDonasi() {
           </div>
         </div>
 
-        {/* Recommended Items */}
-        <div className="mt-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Barang yang sering didonasikan</h2>
-            <button
-              type="button"
-              className="text-blue-900 hover:text-blue-700 text-sm font-medium"
-              onClick={() => showToast('Fitur lihat semua barang', 'info')}
-            >
-              Lihat semua →
-            </button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-            {SAMPLE_ITEMS.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-all cursor-pointer border border-transparent hover:border-blue-200"
-                onClick={() => {
-                  setSearchQuery(item.name);
-                  // Scroll to search input
-                  document.querySelector('input[type="text"]')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(item.name)}
-              >
-                <div className="w-full h-40 bg-linear-to-br from-gray-100 to-gray-200 rounded-lg mb-3 flex items-center justify-center">
-                  <span className="text-gray-500 text-5xl">
-                    {item.category === 'Pakaian' && '👕'}
-                    {item.category === 'Buku' && '📚'}
-                    {item.category === 'Mainan' && '🧸'}
-                    {item.category === 'Sepatu' && '👟'}
-                    {item.category === 'Aksesoris' && '🎒'}
-                    {!['Pakaian', 'Buku', 'Mainan', 'Sepatu', 'Aksesoris'].includes(item.category) && '📦'}
-                  </span>
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-1 truncate" title={item.name}>
-                  {item.name}
-                </h3>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600 bg-gray-100 px-2 py-1 rounded">{item.category}</span>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${item.condition === 'Baru'
-                      ? 'bg-green-100 text-green-800'
-                      : item.condition === 'Baik'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                  >
-                    {item.condition}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* Bottom Navigation */}
+
       </main>
     </div>
   );
