@@ -4,12 +4,16 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function DonasiBarangPage() {
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [donasiItems, setDonasiItems] = useState<Array<{ id: string; name: string }>>([]);
   const [productName, setProductName] = useState('');
   const [productDesc, setProductDesc] = useState('');
   const [locationSearch, setLocationSearch] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -34,8 +38,72 @@ export default function DonasiBarangPage() {
     console.log('Saving draft...');
   };
 
-  const handlePreview = () => {
-    console.log('Preview...');
+  const handleSubmitDonasi = async () => {
+    // Validasi form
+    if (!productName.trim()) {
+      setError('Nama produk harus diisi');
+      return;
+    }
+    if (!productDesc.trim()) {
+      setError('Deskripsi produk harus diisi');
+      return;
+    }
+    if (!locationSearch.trim()) {
+      setError('Lokasi harus diisi');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      // Get user data from localStorage
+      const sessionStr = localStorage.getItem('userSession');
+      if (!sessionStr) {
+        setError('Anda harus login terlebih dahulu');
+        router.push('/auth/login');
+        return;
+      }
+
+      const userData = JSON.parse(sessionStr);
+
+      // Create FormData untuk upload file
+      const formData = new FormData();
+      formData.append('namaBarang', productName);
+      formData.append('deskripsi', productDesc);
+      formData.append('lokasi', locationSearch);
+      formData.append('userId', userData.userId || '');
+
+      if (uploadedFile) {
+        formData.append('file', uploadedFile);
+      }
+
+      const response = await fetch('http://localhost:8080/api/donasi', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Gagal mengirim donasi');
+      }
+
+      setSuccess(true);
+      setProductName('');
+      setProductDesc('');
+      setLocationSearch('');
+      setUploadedFile(null);
+
+      // Redirect to dashboard setelah 2 detik
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+      console.error('Error submitting donasi:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,15 +111,38 @@ export default function DonasiBarangPage() {
   <div className="max-w-7xl  px-6 -mt-6 mx-auto bg-white rounded-2xl shadow-lg p-6">
 
     {/* Header */}
-    <div className="flex items-center gap-3 mb-6">
-      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-        <span className="text-blue-900 text-2xl">📦</span>
+    <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+          <span className="text-blue-900 text-2xl">📦</span>
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Donasi Barang</h2>
+          <p className="text-gray-600">Letakkan barang di sini untuk didonasikan</p>
+        </div>
       </div>
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">Donasi Barang</h2>
-        <p className="text-gray-600">Letakkan barang di sini untuk didonasikan</p>
-      </div>
+      <button
+        type="button"
+        onClick={() => router.push('/dashboard')}
+        className="text-gray-600 hover:text-gray-900 font-medium text-sm"
+      >
+        ← Kembali
+      </button>
     </div>
+
+    {/* Success Message */}
+    {success && (
+      <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+        ✓ Donasi berhasil dikirim! Mengalihkan ke dashboard...
+      </div>
+    )}
+
+    {/* Error Message */}
+    {error && (
+      <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+        ✗ {error}
+      </div>
+    )}
 
     {/* File Upload */}
     <div
@@ -194,16 +285,18 @@ export default function DonasiBarangPage() {
       <button
         type="button"
         onClick={handleSaveDraft}
-        className="flex-1 border-2 border-blue-900 text-blue-900 py-3 rounded-xl font-semibold hover:bg-blue-50"
+        disabled={loading}
+        className="flex-1 border-2 border-blue-900 text-blue-900 py-3 rounded-xl font-semibold hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Simpan Draft
+        Simpan
       </button>
       <button
         type="button"
-        onClick={handlePreview}
-        className="flex-1 bg-blue-900 text-white py-3 rounded-xl font-semibold hover:bg-blue-800"
+        onClick={handleSubmitDonasi}
+        disabled={loading}
+        className="flex-1 bg-blue-900 text-white py-3 rounded-xl font-semibold hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
       >
-        Preview
+        {loading ? 'Mengirim...' : 'Preview'}
       </button>
     </div>
 
