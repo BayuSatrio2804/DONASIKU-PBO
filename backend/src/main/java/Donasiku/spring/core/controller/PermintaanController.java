@@ -51,6 +51,17 @@ public class PermintaanController {
         return ResponseEntity.ok(filtered);
     }
 
+    // Get detail permintaan by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getDetailPermintaan(@PathVariable("id") Integer permintaanId) {
+        try {
+            PermintaanDonasi permintaan = permintaanService.getById(permintaanId);
+            return ResponseEntity.ok(permintaan);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }
+
     // FR-09: Donatur mengajukan penawaran untuk memenuhi permintaan
     @PostMapping("/{id}/offer")
     public ResponseEntity<?> offer(@PathVariable("id") Integer permintaanId,
