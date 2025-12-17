@@ -17,9 +17,8 @@ import Donasiku.spring.core.repository.UserRepository;
 @Configuration
 public class DataSeeder {
 
-    // TEMPORARILY DISABLED - Need to update DB schema first
-    // @org.springframework.context.annotation.Bean
-    CommandLineRunner initDatabaseDisabled(StatusDonasiRepository statusRepo, 
+    @org.springframework.context.annotation.Bean
+    CommandLineRunner initDatabase(StatusDonasiRepository statusRepo, 
                                    UserRepository userRepo, 
                                    LokasiRepository lokasiRepo,
                                    DonasiRepository donasiRepo, // Tambah ini

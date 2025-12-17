@@ -34,17 +34,23 @@ export default function DashboardPage() {
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading...</div>;
 
   const isPenerima = user?.role === 'penerima';
+  
+  // Redirect admin ke admin dashboard
+  if (user?.role === 'admin') {
+    router.push('/admin/dashboard');
+    return null;
+  }
 
   return (
     <div className="md:container md:mx-auto pb-20">
 
       {/* HEADER SECTION */}
-      <div className={`${isPenerima ? 'bg-orange-600' : 'bg-primary'} text - white pt - 8 pb - 16 relative rounded - b - [2.5rem] md: rounded - b - none`}>
+      <div className={`${isPenerima ? 'bg-orange-600' : 'bg-primary'} text-white pt-8 pb-8 rounded-t-3xl`}>
         <div className="px-6 flex items-center justify-between mb-6">
           <div>
-            <p className="text-blue-100 text-sm mb-1">Selamat Datang,</p>
+            <p className="text-white/60 text-sm mb-1">Selamat Datang,</p>
             <h2 className="text-2xl font-bold text-white">{user?.username || 'User'}!</h2>
-            <span className="inline-block mt-1 bg-white/20 px-3 py-1 rounded-full text-xs border border-white/30 backdrop-blur-sm">
+            <span className="inline-block mt-1 bg-white/15 px-3 py-1 rounded-full text-xs border border-white/30 backdrop-blur-sm">
               Role: {isPenerima ? 'Penerima Donasi' : 'Donatur'}
             </span>
           </div>
@@ -52,10 +58,12 @@ export default function DashboardPage() {
             {isPenerima ? '🤲' : '👨‍💼'}
           </div>
         </div>
+      </div>
 
-        {/* Action Card Overlap */}
-        <div className="absolute -bottom-16 left-6 right-6">
-          <div className="bg-white rounded-3xl p-6 shadow-xl flex items-center justify-between">
+      <div className="px-6 space-y-8 bg-gray-50/50 rounded-b-3xl pt-6 -mx-6">
+        {/* Action Card - Donatur & Penerima only */}
+        <div className="-mt-10">
+          <div className="bg-white rounded-3xl p-6 shadow-xl flex items-center justify-between border border-gray-100">
             <div>
               <h3 className="font-bold text-gray-900 text-lg">
                 {isPenerima ? 'Butuh Bantuan?' : 'Siap Berbagi?'}
@@ -75,9 +83,6 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-      </div>
-
-      <div className="mt-24 px-6 space-y-8">
 
         {/* PENERIMA VIEW SPECIFIC */}
         {isPenerima && (

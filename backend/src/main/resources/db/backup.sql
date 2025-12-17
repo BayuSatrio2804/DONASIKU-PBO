@@ -131,5 +131,5 @@ CREATE TABLE Chat_Message (
 -- Username: admin
 -- Password: admin123 (hashed dengan bcrypt)
 INSERT INTO Users (username, email, password, nama, role, status, created_at, updated_at) 
-VALUES ('admin', 'admin@donasiku.com', '$2a$10$slYQmyNdGzin7olVnY8FOe4soDHVxvCkPvyjNiQh5tCy.AY6r4UZS', 'Administrator', 'admin', 'active', NOW(), NOW())
+VALUES ('admin', 'admin@donasiku.com', 'admin123', 'Administrator', 'admin', 'active', NOW(), NOW())
 ON DUPLICATE KEY UPDATE updated_at = NOW();
