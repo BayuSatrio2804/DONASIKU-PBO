@@ -26,14 +26,14 @@ export default function DashboardPage() {
     try {
       const userData = JSON.parse(sessionStr);
       setUser(userData);
-      
+
       // Fetch permintaan untuk penerima
       if (userData.role?.toLowerCase() === 'penerima' && userData.userId) {
-        fetchPermintaan();
+        fetchPermintaan(userData.userId);
         fetchDonasiBersedia();
         fetchDonasiPerluDikonfirmasi(userData.userId);
       }
-      
+
       // Fetch data untuk donatur
       if (userData.role?.toLowerCase() === 'donatur' && userData.userId) {
         fetchDonasiSaya(userData.userId);
@@ -49,9 +49,12 @@ export default function DashboardPage() {
     }
   }, [router]);
 
-  const fetchPermintaan = async () => {
+  const fetchPermintaan = async (userId?: number) => {
     try {
-      const response = await fetch('http://localhost:8080/api/permintaan');
+      const url = userId
+        ? `http://localhost:8080/api/permintaan?penerimaId=${userId}`
+        : 'http://localhost:8080/api/permintaan';
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setPermintaan(data);
@@ -93,8 +96,8 @@ export default function DashboardPage() {
       if (response.ok) {
         const data = await response.json();
         // Filter donasi yang tersedia (belum diambil)
-        const availableDonasi = data.filter((donasi: any) => 
-          donasi.statusDonasi?.status === 'Tersedia' || donasi.statusDonasi?.status === 'TERSEDIA'
+        const availableDonasi = data.filter((donasi: any) =>
+          ['Tersedia', 'TERSEDIA', 'Available', 'AVAILABLE'].includes(donasi.statusDonasi?.status)
         );
         setDonasiBersedia(availableDonasi);
       }
@@ -111,8 +114,8 @@ export default function DashboardPage() {
         // Filter donasi yang sudah diambil tapi belum dikonfirmasi
         const needConfirmation = data.filter((donasi: any) =>
           donasi.penerima?.userId === userId &&
-          (donasi.statusDonasi?.status === 'Pending' || 
-           donasi.statusDonasi?.status === 'PENDING')
+          (donasi.statusDonasi?.status === 'Pending' ||
+            donasi.statusDonasi?.status === 'PENDING')
         );
         setDonasiPerluDikonfirmasi(needConfirmation);
       }
@@ -124,7 +127,7 @@ export default function DashboardPage() {
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading...</div>;
 
   const isPenerima = user?.role === 'penerima';
-  
+
   // Redirect admin ke admin dashboard
   if (user?.role === 'admin') {
     router.push('/admin/dashboard');
@@ -173,6 +176,48 @@ export default function DashboardPage() {
           <div className="space-y-6">
             <section>
               <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-xl text-gray-800">📦 Donasi Tersedia</h3>
+                <Link href="/donasi-tersedia" className="text-primary text-sm font-semibold">Lihat Semua</Link>
+              </div>
+              {donasiBersedia.length === 0 ? (
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
+                    📦
+                  </div>
+                  <p className="font-medium text-gray-900">Belum ada donasi tersedia</p>
+                  <p className="text-sm text-gray-500 mt-2">Donasi dari para donatur akan tampil di sini.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {donasiBersedia.slice(0, 3).map((item: any) => (
+                    <Link key={item.donasiId} href={`/detail-donasi/${item.donasiId}`}>
+                      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-gray-900">{item.namaBarang || item.kategori || 'Donasi'}</h4>
+                            <p className="text-xs text-gray-500 mt-1">👤 {item.donatur?.username || 'Donatur'}</p>
+                            <p className="text-xs text-gray-500">📍 {item.lokasi?.alamatLengkap || item.lokasi || 'Lokasi tidak tersedia'}</p>
+                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsi}</p>
+                            <div className="flex gap-2 mt-3">
+                              <span className="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-semibold">
+                                ✓ Tersedia
+                              </span>
+                              <span className="inline-block text-gray-500 text-xs">
+                                📅 {new Date(item.createdAt).toLocaleDateString('id-ID')}
+                              </span>
+                            </div>
+                          </div>
+                          <button className="text-gray-400 hover:text-gray-600 text-xl">→</button>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-xl text-gray-800">Permintaan Saya</h3>
                 <Link href="/riwayat?tab=permintaan" className="text-primary text-sm font-semibold">Lihat Semua</Link>
               </div>
@@ -204,48 +249,6 @@ export default function DashboardPage() {
                               </span>
                               <span className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">
                                 {item.status}
-                              </span>
-                            </div>
-                          </div>
-                          <button className="text-gray-400 hover:text-gray-600 text-xl">→</button>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-xl text-gray-800">📦 Donasi Tersedia</h3>
-                <Link href="/donasi-tersedia" className="text-primary text-sm font-semibold">Lihat Semua</Link>
-              </div>
-              {donasiBersedia.length === 0 ? (
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
-                    📦
-                  </div>
-                  <p className="font-medium text-gray-900">Belum ada donasi tersedia</p>
-                  <p className="text-sm text-gray-500 mt-2">Donasi dari para donatur akan tampil di sini.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {donasiBersedia.slice(0, 3).map((item: any) => (
-                    <Link key={item.donasiId} href={`/detail-donasi/${item.donasiId}`}>
-                      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-bold text-gray-900">{item.namaBarang || item.kategori || 'Donasi'}</h4>
-                            <p className="text-xs text-gray-500 mt-1">👤 {item.donatur?.username || 'Donatur'}</p>
-                            <p className="text-xs text-gray-500">📍 {item.lokasi?.alamatLengkap || item.lokasi || 'Lokasi tidak tersedia'}</p>
-                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsi}</p>
-                            <div className="flex gap-2 mt-3">
-                              <span className="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-semibold">
-                                ✓ Tersedia
-                              </span>
-                              <span className="inline-block text-gray-500 text-xs">
-                                📅 {new Date(item.createdAt).toLocaleDateString('id-ID')}
                               </span>
                             </div>
                           </div>

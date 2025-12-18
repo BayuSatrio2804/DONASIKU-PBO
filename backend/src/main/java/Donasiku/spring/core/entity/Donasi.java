@@ -33,6 +33,9 @@ public class Donasi {
 
     @Column(name = "foto", length = 99)
     private String foto;
+
+    @Column(name = "jumlah")
+    private Integer jumlah;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lokasi_id", nullable = false)

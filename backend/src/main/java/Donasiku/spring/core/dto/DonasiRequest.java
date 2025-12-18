@@ -9,4 +9,5 @@ public class DonasiRequest {
     private String foto; // URL atau nama file
     private Integer lokasiId; // ID lokasi penjemputan
     private Integer donaturId; // ID User yang login (Nanti bisa diambil dari Token)
+    private Integer jumlah;
 }

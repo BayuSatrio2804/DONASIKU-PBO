@@ -53,6 +53,10 @@ public class PermintaanService {
         return permintaanRepository.findAll();
     }
 
+    public List<PermintaanDonasi> listByPenerima(Integer userId) {
+        return permintaanRepository.findByPenerima_UserId(userId);
+    }
+
     public PermintaanDonasi getById(Integer permintaanId) {
         return permintaanRepository.findById(permintaanId)
                 .orElseThrow(() -> new RuntimeException("Permintaan dengan ID " + permintaanId + " tidak ditemukan"));

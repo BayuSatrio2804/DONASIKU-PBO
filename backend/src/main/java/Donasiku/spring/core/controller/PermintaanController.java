@@ -41,8 +41,16 @@ public class PermintaanController {
 
     // Daftar semua permintaan atau filter by status
     @GetMapping
-    public ResponseEntity<List<PermintaanDonasi>> listPermintaan(@RequestParam(required = false) String status) {
-        List<PermintaanDonasi> all = permintaanService.listAll();
+    public ResponseEntity<List<PermintaanDonasi>> listPermintaan(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer penerimaId) {
+        List<PermintaanDonasi> all;
+        if (penerimaId != null) {
+            all = permintaanService.listByPenerima(penerimaId);
+        } else {
+            all = permintaanService.listAll();
+        }
+
         if (status == null || status.isBlank()) {
             return ResponseEntity.ok(all);
         }

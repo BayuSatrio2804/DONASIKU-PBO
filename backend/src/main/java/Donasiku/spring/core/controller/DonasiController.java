@@ -6,8 +6,10 @@ import Donasiku.spring.core.entity.Donasi;
 import Donasiku.spring.core.service.DonasiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,12 +21,24 @@ public class DonasiController {
     private DonasiService donasiService;
 
     // FR-03: Tambah Donasi Baru
-    @PostMapping
-    public ResponseEntity<?> createDonasi(@RequestBody DonasiRequest request) {
+    @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    public ResponseEntity<?> createDonasi(
+            @RequestParam("namaBarang") String namaBarang,
+            @RequestParam("deskripsi") String deskripsi,
+            @RequestParam("jumlah") Integer jumlah,
+            @RequestParam("lokasi") String lokasi,
+            @RequestParam("userId") Integer userId,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
         try {
-            Donasi donasi = donasiService.createDonasi(request);
+            DonasiRequest request = new DonasiRequest();
+            request.setDeskripsi(deskripsi);
+            request.setKategori(namaBarang); // Map namaBarang to kategori
+            request.setJumlah(jumlah);
+            request.setDonaturId(userId);
+            
+            Donasi donasi = donasiService.createDonasiWithFile(request, lokasi, file);
             return new ResponseEntity<>(donasi, HttpStatus.CREATED);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }

@@ -111,65 +111,65 @@ public class DataSeeder {
             }
 
             // 5. Create Dummy Permintaan
-            if (permintaanRepo.count() == 0 && penerima != null) {
-                // Permintaan 1
-                Lokasi lokasi1 = new Lokasi();
-                lokasi1.setAlamatLengkap("Jl. Ahmad Yani No. 50, Jakarta Timur");
-                lokasi1.setGarisLintang(-6.2088);
-                lokasi1.setGarisBujur(106.8905);
-                lokasi1.setTipeLokasi(Lokasi.TipeLokasi.penerima);
-                lokasi1 = lokasiRepo.save(lokasi1);
+            // if (permintaanRepo.count() == 0 && penerima != null) {
+            //     // Permintaan 1
+            //     Lokasi lokasi1 = new Lokasi();
+            //     lokasi1.setAlamatLengkap("Jl. Ahmad Yani No. 50, Jakarta Timur");
+            //     lokasi1.setGarisLintang(-6.2088);
+            //     lokasi1.setGarisBujur(106.8905);
+            //     lokasi1.setTipeLokasi(Lokasi.TipeLokasi.penerima);
+            //     lokasi1 = lokasiRepo.save(lokasi1);
 
-                PermintaanDonasi p1 = new PermintaanDonasi();
-                p1.setJenisBarang("Buku Pelajaran SD");
-                p1.setJumlah(20);
-                p1.setDeskripsiKebutuhan("Butuh buku pelajaran untuk siswa kelas 3-5 SD. Buku dalam kondisi baik atau seperti baru.");
-                p1.setPenerima(penerima);
-                p1.setLokasi(lokasi1);
-                p1.setStatus("Open");
-                p1.setCreatedAt(java.time.LocalDateTime.now());
-                permintaanRepo.save(p1);
+            //     PermintaanDonasi p1 = new PermintaanDonasi();
+            //     p1.setJenisBarang("Buku Pelajaran SD");
+            //     p1.setJumlah(20);
+            //     p1.setDeskripsiKebutuhan("Butuh buku pelajaran untuk siswa kelas 3-5 SD. Buku dalam kondisi baik atau seperti baru.");
+            //     p1.setPenerima(penerima);
+            //     p1.setLokasi(lokasi1);
+            //     p1.setStatus("Open");
+            //     p1.setCreatedAt(java.time.LocalDateTime.now());
+            //     permintaanRepo.save(p1);
 
-                // Permintaan 2
-                Lokasi lokasi2 = new Lokasi();
-                lokasi2.setAlamatLengkap("Jl. Gatot Subroto No. 100, Bandung");
-                lokasi2.setGarisLintang(-6.9271);
-                lokasi2.setGarisBujur(107.6411);
-                lokasi2.setTipeLokasi(Lokasi.TipeLokasi.penerima);
-                lokasi2 = lokasiRepo.save(lokasi2);
+            //     // Permintaan 2
+            //     Lokasi lokasi2 = new Lokasi();
+            //     lokasi2.setAlamatLengkap("Jl. Gatot Subroto No. 100, Bandung");
+            //     lokasi2.setGarisLintang(-6.9271);
+            //     lokasi2.setGarisBujur(107.6411);
+            //     lokasi2.setTipeLokasi(Lokasi.TipeLokasi.penerima);
+            //     lokasi2 = lokasiRepo.save(lokasi2);
 
-                PermintaanDonasi p2 = new PermintaanDonasi();
-                p2.setJenisBarang("Pakaian Anak-anak");
-                p2.setJumlah(50);
-                p2.setDeskripsiKebutuhan("Membutuhkan pakaian untuk anak-anak berusia 5-12 tahun. Ukuran S, M, L. Pakaian sudah tidak terpakai.");
-                p2.setPenerima(penerima);
-                p2.setLokasi(lokasi2);
-                p2.setStatus("Open");
-                p2.setCreatedAt(java.time.LocalDateTime.now());
-                permintaanRepo.save(p2);
+            //     PermintaanDonasi p2 = new PermintaanDonasi();
+            //     p2.setJenisBarang("Pakaian Anak-anak");
+            //     p2.setJumlah(50);
+            //     p2.setDeskripsiKebutuhan("Membutuhkan pakaian untuk anak-anak berusia 5-12 tahun. Ukuran S, M, L. Pakaian sudah tidak terpakai.");
+            //     p2.setPenerima(penerima);
+            //     p2.setLokasi(lokasi2);
+            //     p2.setStatus("Open");
+            //     p2.setCreatedAt(java.time.LocalDateTime.now());
+            //     permintaanRepo.save(p2);
 
-                // Permintaan 3 (Urgent)
-                Lokasi lokasi3 = new Lokasi();
-                lokasi3.setAlamatLengkap("Jl. Sudirman No. 25, Surabaya");
-                lokasi3.setGarisLintang(-7.2506);
-                lokasi3.setGarisBujur(112.7508);
-                lokasi3.setTipeLokasi(Lokasi.TipeLokasi.penerima);
-                lokasi3 = lokasiRepo.save(lokasi3);
+            //     // Permintaan 3 (Urgent)
+            //     Lokasi lokasi3 = new Lokasi();
+            //     lokasi3.setAlamatLengkap("Jl. Sudirman No. 25, Surabaya");
+            //     lokasi3.setGarisLintang(-7.2506);
+            //     lokasi3.setGarisBujur(112.7508);
+            //     lokasi3.setTipeLokasi(Lokasi.TipeLokasi.penerima);
+            //     lokasi3 = lokasiRepo.save(lokasi3);
 
-                PermintaanDonasi p3 = new PermintaanDonasi();
-                p3.setJenisBarang("Makanan Pokok & Susu");
-                p3.setJumlah(100);
-                p3.setDeskripsiKebutuhan("URGENT! Anak-anak kami membutuhkan makanan pokok dan susu untuk kebutuhan sebulan ke depan. Mohon bantuan segera.");
-                p3.setPenerima(penerima);
-                p3.setLokasi(lokasi3);
-                p3.setStatus("Urgent");
-                p3.setCreatedAt(java.time.LocalDateTime.now());
-                permintaanRepo.save(p3);
+            //     PermintaanDonasi p3 = new PermintaanDonasi();
+            //     p3.setJenisBarang("Makanan Pokok & Susu");
+            //     p3.setJumlah(100);
+            //     p3.setDeskripsiKebutuhan("URGENT! Anak-anak kami membutuhkan makanan pokok dan susu untuk kebutuhan sebulan ke depan. Mohon bantuan segera.");
+            //     p3.setPenerima(penerima);
+            //     p3.setLokasi(lokasi3);
+            //     p3.setStatus("Urgent");
+            //     p3.setCreatedAt(java.time.LocalDateTime.now());
+            //     permintaanRepo.save(p3);
 
-                System.out.println("=== SAMPLE PERMINTAAN DATA CREATED ===");
-                System.out.println("3 dummy permintaan telah dibuat");
-                System.out.println("======================================");
-            }
+            //     System.out.println("=== SAMPLE PERMINTAAN DATA CREATED ===");
+            //     System.out.println("3 dummy permintaan telah dibuat");
+            //     System.out.println("======================================");
+            // }
         };
     }
 }

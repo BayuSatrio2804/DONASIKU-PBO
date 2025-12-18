@@ -9,6 +9,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class DonasiService {
@@ -18,26 +23,48 @@ public class DonasiService {
     @Autowired private UserRepository userRepository; // Asumsi ada UserRepository
     @Autowired private LokasiRepository lokasiRepository;
 
-    // --- FR-03: Donatur Memposting Barang Donasi ---
+    // --- FR-03: Donatur Memposting Barang Donasi (Extended with File and Location String) ---
     @Transactional
-    public Donasi createDonasi(DonasiRequest request) {
+    public Donasi createDonasiWithFile(DonasiRequest request, String lokasiName, org.springframework.web.multipart.MultipartFile file) {
         // 1. Validasi User
         User donatur = userRepository.findById(request.getDonaturId())
                 .orElseThrow(() -> new RuntimeException("Donatur tidak ditemukan"));
 
-        // 2. Validasi Lokasi
-        Lokasi lokasi = lokasiRepository.findById(request.getLokasiId())
-                .orElseThrow(() -> new RuntimeException("Lokasi tidak ditemukan"));
+        // 2. Handle Lokasi (Find existing or create new)
+        Lokasi lokasi = lokasiRepository.findByAlamatLengkap(lokasiName)
+                .orElseGet(() -> {
+                    Lokasi newLokasi = new Lokasi();
+                    newLokasi.setAlamatLengkap(lokasiName);
+                    newLokasi.setGarisLintang(0.0); // Dummy for now
+                    newLokasi.setGarisBujur(0.0);   // Dummy for now
+                    return lokasiRepository.save(newLokasi);
+                });
 
-        // 3. Set Status Awal (Misal: "Available" atau "Pending")
-        StatusDonasi statusAwal = statusRepository.findByStatus("Available")
-                .orElseThrow(() -> new RuntimeException("Status 'Available' belum ada di database"));
+        // 3. Set Status Awal
+        StatusDonasi statusAwal = statusRepository.findByStatus("Tersedia")
+                .or(() -> statusRepository.findByStatus("Available"))
+                .orElseThrow(() -> new RuntimeException("Status 'Tersedia' atau 'Available' belum ada di database"));
 
-        // 4. Buat Object Donasi
+        // 4. Handle File
+        String fileName = null;
+        if (file != null && !file.isEmpty()) {
+            try {
+                // Simplified file saving logic
+                fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+                java.nio.file.Path path = java.nio.file.Paths.get("uploads/" + fileName);
+                java.nio.file.Files.createDirectories(path.getParent());
+                java.nio.file.Files.write(path, file.getBytes());
+            } catch (java.io.IOException e) {
+                throw new RuntimeException("Gagal menyimpan file: " + e.getMessage());
+            }
+        }
+
+        // 5. Buat Object Donasi
         Donasi donasi = new Donasi();
         donasi.setDeskripsi(request.getDeskripsi());
         donasi.setKategori(request.getKategori());
-        donasi.setFoto(request.getFoto());
+        donasi.setFoto(fileName != null ? fileName : request.getFoto());
+        donasi.setJumlah(request.getJumlah());
         donasi.setLokasi(lokasi);
         donasi.setDonatur(donatur);
         donasi.setStatusDonasi(statusAwal);
