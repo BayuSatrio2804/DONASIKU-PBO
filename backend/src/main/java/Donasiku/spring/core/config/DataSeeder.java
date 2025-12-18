@@ -39,6 +39,10 @@ public class DataSeeder {
             } else {
                 statusDikirim = statusRepo.findByStatus("Dikirim").get();
             }
+            if (statusRepo.findByStatus("Menunggu Konfirmasi").isEmpty()) {
+                StatusDonasi s4 = new StatusDonasi(); s4.setStatus("Menunggu Konfirmasi"); s4.setStatusVerifikasi(true);
+                statusRepo.save(s4);
+            }
             if (statusRepo.findByStatus("Diterima").isEmpty()) {
                 StatusDonasi s3 = new StatusDonasi(); s3.setStatus("Diterima"); s3.setStatusVerifikasi(true);
                 statusRepo.save(s3);

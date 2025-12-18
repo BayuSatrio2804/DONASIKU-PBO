@@ -85,8 +85,14 @@ public class DonasiService {
                 .orElseThrow(() -> new RuntimeException("Status tidak valid: " + statusBaru));
 
         // 3. Validasi Hak Akses (Security Logic)
-        boolean isDonatur = donasi.getDonatur().getUserId().equals(userId);
-        boolean isPenerima = donasi.getPenerima() != null && donasi.getPenerima().getUserId().equals(userId);
+        // 3. Validasi Hak Akses (Security Logic)
+        if (userId == null) throw new RuntimeException("User ID tidak valid (null)");
+        
+        Integer donaturId = donasi.getDonatur() != null ? donasi.getDonatur().getUserId() : -1;
+        Integer penerimaId = donasi.getPenerima() != null ? donasi.getPenerima().getUserId() : -1;
+        
+        boolean isDonatur = donaturId.equals(userId);
+        boolean isPenerima = penerimaId.equals(userId);
 
         // FR-14: Donatur mengubah status jadi "Dikirim"
         if (statusBaru.equalsIgnoreCase("Dikirim")) {
@@ -107,6 +113,35 @@ public class DonasiService {
         donasi.setStatusDonasi(statusObj);
         donasi.setUpdatedAt(LocalDateTime.now());
         
+        return donasiRepository.save(donasi);
+    }
+
+    // --- New Flow: Penerima Claim Donasi ---
+    @Transactional
+    public Donasi claimDonasi(Integer donasiId, Integer penerimaId) {
+        // 1. Cari Donasi
+        Donasi donasi = donasiRepository.findById(donasiId)
+                .orElseThrow(() -> new RuntimeException("Donasi tidak ditemukan"));
+
+        // 2. Validasi User Penerima
+        User penerima = userRepository.findById(penerimaId)
+                .orElseThrow(() -> new RuntimeException("Penerima tidak ditemukan"));
+
+        // 3. Validasi Status Awal (Harus Tersedia/Available)
+        String currentStatus = donasi.getStatusDonasi().getStatus();
+        if (!currentStatus.equalsIgnoreCase("Tersedia") && !currentStatus.equalsIgnoreCase("Available")) {
+            throw new RuntimeException("Donasi tidak dalam status tersedia.");
+        }
+
+        // 4. Cari Status 'Menunggu Konfirmasi'
+        StatusDonasi statusPending = statusRepository.findByStatus("Menunggu Konfirmasi")
+                .orElseThrow(() -> new RuntimeException("Status 'Menunggu Konfirmasi' belum ada di database"));
+
+        // 5. Update Donasi
+        donasi.setPenerima(penerima);
+        donasi.setStatusDonasi(statusPending);
+        donasi.setUpdatedAt(LocalDateTime.now());
+
         return donasiRepository.save(donasi);
     }
 

@@ -15,10 +15,13 @@ public class PermintaanService {
     @Autowired private PermintaanKonfirmasiRepository konfirmasiRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private LokasiRepository lokasiRepository;
+    @Autowired private DonasiRepository donasiRepository;
+    @Autowired private StatusDonasiRepository statusRepository;
 
     // --- FR-07: Penerima Membuat Permintaan (Support utk FR-08) ---
     @Transactional
     public PermintaanDonasi createPermintaan(PermintaanDonasi request) {
+        // ... (existing code, not modifying this part, just context)
         // Pastikan User ada
         User penerima = userRepository.findById(request.getPenerima().getUserId())
                 .orElseThrow(() -> new RuntimeException("User penerima tidak ditemukan"));
@@ -48,7 +51,7 @@ public class PermintaanService {
         request.setCreatedAt(LocalDateTime.now());
         return permintaanRepository.save(request);
     }
-
+    
     public List<PermintaanDonasi> listAll() {
         return permintaanRepository.findAll();
     }
@@ -62,50 +65,85 @@ public class PermintaanService {
                 .orElseThrow(() -> new RuntimeException("Permintaan dengan ID " + permintaanId + " tidak ditemukan"));
     }
 
-    // --- FR-08: Donatur Menawarkan Bantuan (INTI TUGASMU) ---
     @Transactional
     public PermintaanKonfirmasi offerToFulfill(Integer permintaanId, Integer donaturId) {
-        // 1. Cek Permintaan
         PermintaanDonasi permintaan = permintaanRepository.findById(permintaanId)
                 .orElseThrow(() -> new RuntimeException("Permintaan tidak ditemukan"));
-
-        // 2. Cek Donatur
         User donatur = userRepository.findById(donaturId)
                 .orElseThrow(() -> new RuntimeException("Donatur tidak ditemukan"));
-
-        // 3. Validasi: Jangan sampai penerima menawarkan ke permintaannya sendiri
         if (permintaan.getPenerima().getUserId().equals(donaturId)) {
             throw new RuntimeException("Anda tidak bisa menawarkan bantuan ke permintaan sendiri.");
         }
-
-        // 4. Validasi: Apakah sudah pernah offer sebelumnya? (Opsional, biar data bersih)
-        // (Bisa ditambahkan cek ke konfirmasiRepository)
-
-        // 5. Buat Konfirmasi (Offer)
         PermintaanKonfirmasi offer = new PermintaanKonfirmasi();
         offer.setPermintaan(permintaan);
         offer.setDonatur(donatur);
-        offer.setStatus("Offered"); // Status penawaran
+        offer.setStatus("Offered");
         offer.setCreatedAt(LocalDateTime.now());
-
         return konfirmasiRepository.save(offer);
     }
 
-    // --- FR-10: Konfirmasi Offer (Bagian Nabiel, tapi perlu ada biar tidak error compile) ---
     @Transactional
     public PermintaanKonfirmasi confirmOffer(Integer permintaanId, Integer konfirmasiId, Integer penerimaId) {
         PermintaanKonfirmasi pk = konfirmasiRepository.findById(konfirmasiId)
                 .orElseThrow(() -> new RuntimeException("Data konfirmasi tidak ditemukan"));
-        
-        // Logika validasi penerimaId == pk.getPermintaan().getPenerima().getId()...
         pk.setStatus("Confirmed");
         pk.setUpdatedAt(LocalDateTime.now());
-        
-        // Update status permintaan jadi fulfilled/closed
         PermintaanDonasi pd = pk.getPermintaan();
         pd.setStatus("Fulfilled");
         permintaanRepository.save(pd);
-        
         return konfirmasiRepository.save(pk);
+    } 
+
+    @Transactional
+    public PermintaanDonasi fulfillPermintaan(Integer permintaanId, Integer donaturId) {
+        PermintaanDonasi permintaan = permintaanRepository.findById(permintaanId)
+                .orElseThrow(() -> new RuntimeException("Permintaan tidak ditemukan"));
+        
+        User donatur = userRepository.findById(donaturId)
+                .orElseThrow(() -> new RuntimeException("Donatur tidak ditemukan"));
+
+        if (!"Open".equalsIgnoreCase(permintaan.getStatus())) {
+            throw new RuntimeException("Permintaan tidak dalam status Open.");
+        }
+
+        permintaan.setDonatur(donatur);
+        permintaan.setStatus("Diproses"); // Menunggu Konfirmasi Penerima (Sesuai keinginan user)
+        return permintaanRepository.save(permintaan);
+    }
+
+    @Transactional
+    public PermintaanDonasi acceptOffer(Integer permintaanId) {
+        PermintaanDonasi permintaan = permintaanRepository.findById(permintaanId)
+                .orElseThrow(() -> new RuntimeException("Permintaan tidak ditemukan"));
+
+        // Izinkan Diproses atau Offered agar data lama tetap bisa ditransisi
+        if (!"Diproses".equalsIgnoreCase(permintaan.getStatus()) && !"Offered".equalsIgnoreCase(permintaan.getStatus())) {
+            throw new RuntimeException("Permintaan belum ditawarkan bantuan oleh donatur.");
+        }
+
+        // 1. Update Permintaan -> Fulfilled
+        permintaan.setStatus("Fulfilled"); 
+        
+        // 2. Create Donasi (Status: Dikirim)
+        Donasi donasi = new Donasi();
+        donasi.setDonatur(permintaan.getDonatur()); // Donatur sudah diset di tahap offered
+        donasi.setPenerima(permintaan.getPenerima());
+        donasi.setKategori(permintaan.getJenisBarang()); 
+        donasi.setDeskripsi("PERMINTAAN DIPENUHI: " + permintaan.getDeskripsiKebutuhan());
+        donasi.setJumlah(permintaan.getJumlah());
+        donasi.setLokasi(permintaan.getLokasi());
+        donasi.setCreatedAt(LocalDateTime.now());
+        donasi.setUpdatedAt(LocalDateTime.now());
+        donasi.setFoto("default_fulfillment.png"); 
+
+        StatusDonasi statusDikirim = statusRepository.findByStatus("Dikirim")
+                .orElseGet(() -> {
+                     StatusDonasi s = new StatusDonasi(); s.setStatus("Dikirim"); s.setStatusVerifikasi(true);
+                     return statusRepository.save(s);
+                });
+        donasi.setStatusDonasi(statusDikirim);
+
+        donasiRepository.save(donasi);
+        return permintaanRepository.save(permintaan);
     }
 }

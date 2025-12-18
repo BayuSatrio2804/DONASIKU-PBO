@@ -30,6 +30,10 @@ public class PermintaanDonasi {
     @JoinColumn(name = "penerima_user_id", nullable = false)
     private User penerima; 
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "donatur_user_id") // Nullable
+    private User donatur;
+
     // FK lokasi_id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lokasi_id", nullable = false)

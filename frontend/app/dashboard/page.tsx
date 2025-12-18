@@ -38,6 +38,7 @@ export default function DashboardPage() {
       if (userData.role?.toLowerCase() === 'donatur' && userData.userId) {
         fetchDonasiSaya(userData.userId);
         fetchAllPermintaan();
+        fetchDonasiPerluDikonfirmasi(userData.userId);
       }
     } catch (e) {
       console.error("Invalid session", e);
@@ -111,16 +112,95 @@ export default function DashboardPage() {
       const response = await fetch('http://localhost:8080/api/donasi');
       if (response.ok) {
         const data = await response.json();
-        // Filter donasi yang sudah diambil tapi belum dikonfirmasi
+        // Untuk Donatur: donasi buatan mereka yang statusnya "Menunggu Konfirmasi"
         const needConfirmation = data.filter((donasi: any) =>
-          donasi.penerima?.userId === userId &&
-          (donasi.statusDonasi?.status === 'Pending' ||
-            donasi.statusDonasi?.status === 'PENDING')
+          donasi.donatur?.userId === userId &&
+          ['Menunggu Konfirmasi', 'Pending', 'PENDING'].includes(donasi.statusDonasi?.status)
         );
         setDonasiPerluDikonfirmasi(needConfirmation);
       }
     } catch (err) {
       console.error('Error fetching donasi perlu dikonfirmasi:', err);
+    }
+  };
+
+  const handleClaimDonasi = async (donasiId: number) => {
+    if (!user?.userId) return;
+    try {
+      const response = await fetch(`http://localhost:8080/api/donasi/${donasiId}/claim?userId=${user.userId}`, {
+        method: 'POST'
+      });
+      if (response.ok) {
+        alert('Berhasil mengklaim donasi! Menunggu persetujuan donatur.');
+        // Refresh data
+        fetchDonasiBersedia();
+        if (user.role === 'penerima') fetchPermintaan(user.userId);
+      } else {
+        const txt = await response.text();
+        alert('Gagal mengklaim: ' + txt);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Gagal menghubungi server');
+    }
+  };
+
+  const handleApproveDonasi = async (donasiId: number) => {
+    if (!user?.userId) return;
+    try {
+      const response = await fetch(`http://localhost:8080/api/donasi/${donasiId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statusBaru: 'Dikirim', userId: user.userId })
+      });
+      if (response.ok) {
+        alert('Donasi disetujui dan sedang dikirim!');
+        fetchDonasiPerluDikonfirmasi(user.userId);
+        fetchDonasiSaya(user.userId);
+      } else {
+        alert('Gagal menyetujui donasi');
+      }
+    } catch (err) {
+      alert('Error action');
+    }
+  };
+
+
+
+  const [donasiPenerim, setDonasiPenerim] = useState<any[]>([]);
+
+  const fetchDonasiPenerima = async (userId: number) => {
+    try {
+      const response = await fetch('http://localhost:8080/api/donasi');
+      if (response.ok) {
+        const data = await response.json();
+        // Filter: Donasi where penerima is ME
+        const myClaims = data.filter((d: any) => d.penerima?.userId === userId);
+        setDonasiPenerim(myClaims);
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  useEffect(() => {
+    if (user?.role === 'penerima' && user.userId) fetchDonasiPenerima(user.userId);
+  }, [user && user.userId]);
+
+  const handleCompleteDonasi = async (donasiId: number) => {
+    if (!user?.userId) return;
+    try {
+      const response = await fetch(`http://localhost:8080/api/donasi/${donasiId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statusBaru: 'Diterima', userId: user.userId })
+      });
+      if (response.ok) {
+        alert('Donasi berhasil diselesaikan!');
+        fetchDonasiPenerima(user.userId);
+      } else {
+        alert('Gagal update status');
+      }
+    } catch (err) {
+      alert('Error action');
     }
   };
 
@@ -171,9 +251,39 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* PENERIMA VIEW SPECIFIC */}
+
+        {/* Add this section before existing sections in Recipient View */}
         {isPenerima && (
           <div className="space-y-6">
+            {donasiPenerim.some(d => ['Dikirim', 'Menunggu Konfirmasi'].includes(d.statusDonasi?.status)) && (
+              <section className="mb-8">
+                <h3 className="font-bold text-xl text-gray-800 mb-4">🚚 Status Pengiriman</h3>
+                <div className="space-y-3">
+                  {donasiPenerim.filter(d => ['Dikirim', 'Menunggu Konfirmasi'].includes(d.statusDonasi?.status)).map((item: any) => (
+                    <div key={item.donasiId} className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold text-gray-900">{item.kategori}</h4>
+                          <p className="text-sm text-gray-600">Status: <span className="font-bold">{item.statusDonasi?.status}</span></p>
+                          <p className="text-xs text-gray-500 mt-1">Donatur: {item.donatur?.username}</p>
+                        </div>
+                        {item.statusDonasi?.status === 'Dikirim' && (
+                          <button onClick={() => {
+                            if (confirm("Barang sudah sampai?")) handleCompleteDonasi(item.donasiId);
+                          }} className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm shadow">
+                            Konfirmasi Diterima
+                          </button>
+                        )}
+                        {item.statusDonasi?.status === 'Menunggu Konfirmasi' && (
+                          <span className="text-xs text-gray-400 italic">Menunggu donatur...</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-xl text-gray-800">📦 Donasi Tersedia</h3>
@@ -207,7 +317,16 @@ export default function DashboardPage() {
                               </span>
                             </div>
                           </div>
-                          <button className="text-gray-400 hover:text-gray-600 text-xl">→</button>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (confirm('Apakah Anda yakin ingin mengambil donasi ini?')) handleClaimDonasi(item.donasiId);
+                            }}
+                            className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-blue-700 transition-colors"
+                          >
+                            Ambil
+                          </button>
                         </div>
                       </div>
                     </Link>
@@ -262,53 +381,48 @@ export default function DashboardPage() {
             </section>
 
             <section>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-xl text-gray-800">✋ Perlu Dikonfirmasi</h3>
-                <Link href="/riwayat-donasi-diterima" className="text-primary text-sm font-semibold">Lihat Semua</Link>
-              </div>
-              {donasiPerluDikonfirmasi.length === 0 ? (
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
-                    ✓
-                  </div>
-                  <p className="font-medium text-gray-900">Semua donasi sudah dikonfirmasi</p>
-                  <p className="text-sm text-gray-500 mt-2">Tidak ada donasi yang perlu dikonfirmasi.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {donasiPerluDikonfirmasi.slice(0, 3).map((item: any) => (
-                    <Link key={item.donasiId} href={`/konfirmasi-donasi/${item.donasiId}`}>
-                      <div className="bg-red-50 border border-red-200 rounded-2xl p-4 hover:shadow-md hover:border-red-400 transition-all cursor-pointer">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-bold text-gray-900">{item.namaBarang || item.kategori}</h4>
-                              <span className="inline-block bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-semibold">
-                                ⏳ Menunggu
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">👤 {item.donatur?.username || 'Donatur'}</p>
-                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsi}</p>
-                          </div>
-                          <button className="text-gray-400 hover:text-gray-600 text-xl ml-2">→</button>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>            <section>
               <h3 className="font-bold text-xl text-gray-800 mb-4">Status Terkini</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 mb-8">
                 <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                  <h4 className="text-blue-900 font-bold text-2xl mb-1">0</h4>
-                  <p className="text-blue-700 text-sm">Menunggu Verifikasi</p>
+                  <h4 className="text-blue-900 font-bold text-2xl mb-1">
+                    {donasiPenerim.filter(d => ['Menunggu Konfirmasi', 'Dikirim'].includes(d.statusDonasi?.status)).length}
+                  </h4>
+                  <p className="text-blue-700 text-sm">Menunggu Verifikasi/Dikirim</p>
                 </div>
                 <div className="bg-green-50 p-4 rounded-2xl border border-green-100">
-                  <h4 className="text-green-900 font-bold text-2xl mb-1">0</h4>
+                  <h4 className="text-green-900 font-bold text-2xl mb-1">
+                    {donasiPenerim.filter(d => d.statusDonasi?.status === 'Diterima').length}
+                  </h4>
                   <p className="text-green-700 text-sm">Barang Diterima</p>
                 </div>
               </div>
+
+              {/* RIWAYAT BARANG DITERIMA */}
+              <h3 className="font-bold text-xl text-gray-800 mb-4">📜 Riwayat Barang Diterima</h3>
+              {donasiPenerim.filter(d => d.statusDonasi?.status === 'Diterima').length === 0 ? (
+                <div className="text-center py-8 bg-gray-100 rounded-2xl border border-gray-200 border-dashed">
+                  <p className="text-gray-500">Belum ada barang yang diterima.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {donasiPenerim.filter(d => d.statusDonasi?.status === 'Diterima').map((item: any) => (
+                    <div key={item.donasiId} className="bg-white border border-green-100 rounded-2xl p-4 shadow-sm opacity-75 hover:opacity-100 transition-opacity">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold text-gray-900 strike-through">{item.namaBarang || item.kategori}</h4>
+                          <p className="text-sm text-gray-600">Donatur: {item.donatur?.username}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Diterima pada: {new Date(item.updatedAt || Date.now()).toLocaleDateString('id-ID')}
+                          </p>
+                        </div>
+                        <span className="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-bold">
+                          ✓ Selesai
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           </div>
         )}
@@ -330,6 +444,51 @@ export default function DashboardPage() {
                 <span className="text-gray-300 group-hover:text-primary transition-colors text-xl">→</span>
               </button>
             </Link>
+
+            {/* DONASI PERLU DIKONFIRMASI SECTION */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-xl text-gray-800">✋ Perlu Dikonfirmasi</h3>
+                <Link href="/donasi/pending" className="text-primary text-sm font-semibold">Lihat Semua</Link>
+              </div>
+              {donasiPerluDikonfirmasi.length === 0 ? (
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
+                    ✓
+                  </div>
+                  <p className="font-medium text-gray-900">Semua donasi sudah dikonfirmasi</p>
+                  <p className="text-sm text-gray-500 mt-2">Tidak ada permintaan yang menunggu persetujuan Anda.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {donasiPerluDikonfirmasi.slice(0, 3).map((item: any) => (
+                    <div key={item.donasiId} className="bg-red-50 border border-red-200 rounded-2xl p-4 hover:shadow-md hover:border-red-400 transition-all">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-bold text-gray-900">{item.kategori}</h4>
+                            <span className="inline-block bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-semibold">
+                              ⏳ Konfirmasi
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">👤 Penerima: {item.penerima?.username || 'Seseorang'}</p>
+                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsi}</p>
+
+                          <button
+                            onClick={() => {
+                              if (confirm("Setujui permintaan donasi ini?")) handleApproveDonasi(item.donasiId);
+                            }}
+                            className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-red-700 transition"
+                          >
+                            Setujui
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
 
             {/* DONASI SAYA SECTION */}
             <section>

@@ -49,11 +49,33 @@ export default function DetailDonasiPage() {
         return;
       }
 
-      // Redirect ke permintaan barang dengan membawa data donasi
-      router.push(`/permintaan?donasi=${donasi.donasiId}&barang=${encodeURIComponent(donasi.namaBarang)}`);
+      const user = JSON.parse(sessionStr);
+      if (user.role !== 'penerima') {
+        alert("Hanya penerima yang bisa mengambil donasi");
+        return;
+      }
+
+      setTaking(true);
+      // Call Claim API
+      // POST /api/donasi/{id}/claim?userId=...
+      const response = await fetch(`http://localhost:8080/api/donasi/${donasi_id}/claim?userId=${user.userId}`, {
+        method: 'POST'
+      });
+
+      if (response.ok) {
+        setSuccess(true);
+        // Alert and Redirect equivalent to "Ambil" in dashboard
+        alert('Berhasil mengklaim donasi! Menunggu persetujuan donatur.');
+        router.push('/dashboard');
+      } else {
+        const txt = await response.text();
+        setError('Gagal mengklaim: ' + txt);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
       console.error('Error:', err);
+    } finally {
+      setTaking(false);
     }
   };
 

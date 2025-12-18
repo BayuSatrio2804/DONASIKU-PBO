@@ -94,4 +94,28 @@ public class PermintaanController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
+
+
+    // New Endpoint for Simple Fulfillment (Donor accepts request directly)
+    @PostMapping("/{id}/fulfill")
+    public ResponseEntity<?> fulfill(@PathVariable("id") Integer permintaanId,
+                                     @RequestParam("donaturId") Integer donaturId) {
+        try {
+            PermintaanDonasi p = permintaanService.fulfillPermintaan(permintaanId, donaturId);
+            return ResponseEntity.ok(p);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    // New Endpoint for Recipient to Accept the Fulfillment
+    @PostMapping("/{id}/accept-offer")
+    public ResponseEntity<?> acceptFulfillment(@PathVariable("id") Integer permintaanId) {
+        try {
+            PermintaanDonasi p = permintaanService.acceptOffer(permintaanId);
+            return ResponseEntity.ok(p);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
 }

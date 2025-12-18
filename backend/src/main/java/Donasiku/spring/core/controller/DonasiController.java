@@ -56,6 +56,19 @@ public class DonasiController {
         }
     }
 
+    // New Endpoint: Recipient Claims Donation
+    @PostMapping("/{id}/claim")
+    public ResponseEntity<?> claimDonasi(
+            @PathVariable("id") Integer donasiId,
+            @RequestParam("userId") Integer userId) {
+        try {
+            Donasi updated = donasiService.claimDonasi(donasiId, userId);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
     // Helper: Lihat Detail Donasi
     @GetMapping("/{id}")
     public ResponseEntity<?> getDonasi(@PathVariable("id") Integer id) {
