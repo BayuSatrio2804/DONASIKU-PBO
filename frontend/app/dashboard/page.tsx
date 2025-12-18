@@ -70,8 +70,10 @@ export default function DashboardPage() {
       const response = await fetch('http://localhost:8080/api/donasi');
       if (response.ok) {
         const data = await response.json();
-        // Filter donasi yang dibuat oleh user (donatur)
-        const userDonasi = data.filter((donasi: any) => donasi.donatur?.userId === userId);
+        // Filter donasi yang dibuat oleh user (donatur) dan urutkan dari yang terbaru
+        const userDonasi = data
+          .filter((donasi: any) => Number(donasi.donatur?.userId) === Number(userId))
+          .sort((a: any, b: any) => (b.donasiId || 0) - (a.donasiId || 0));
         setDonasiSaya(userDonasi);
       }
     } catch (err) {
@@ -84,7 +86,9 @@ export default function DashboardPage() {
       const response = await fetch('http://localhost:8080/api/permintaan');
       if (response.ok) {
         const data = await response.json();
-        setAllPermintaan(data);
+        // Urutkan dari yang terbaru
+        const sorted = data.sort((a: any, b: any) => (b.permintaanId || 0) - (a.permintaanId || 0));
+        setAllPermintaan(sorted);
       }
     } catch (err) {
       console.error('Error fetching all permintaan:', err);
@@ -114,7 +118,7 @@ export default function DashboardPage() {
         const data = await response.json();
         // Untuk Donatur: donasi buatan mereka yang statusnya "Menunggu Konfirmasi"
         const needConfirmation = data.filter((donasi: any) =>
-          donasi.donatur?.userId === userId &&
+          Number(donasi.donatur?.userId) === Number(userId) &&
           ['Menunggu Konfirmasi', 'Pending', 'PENDING'].includes(donasi.statusDonasi?.status)
         );
         setDonasiPerluDikonfirmasi(needConfirmation);
@@ -134,7 +138,10 @@ export default function DashboardPage() {
         alert('Berhasil mengklaim donasi! Menunggu persetujuan donatur.');
         // Refresh data
         fetchDonasiBersedia();
-        if (user.role === 'penerima') fetchPermintaan(user.userId);
+        if (user.role === 'penerima') {
+          fetchPermintaan(user.userId);
+          fetchDonasiPenerima(user.userId);
+        }
       } else {
         const txt = await response.text();
         alert('Gagal mengklaim: ' + txt);
@@ -175,7 +182,7 @@ export default function DashboardPage() {
       if (response.ok) {
         const data = await response.json();
         // Filter: Donasi where penerima is ME
-        const myClaims = data.filter((d: any) => d.penerima?.userId === userId);
+        const myClaims = data.filter((d: any) => Number(d.penerima?.userId) === Number(userId));
         setDonasiPenerim(myClaims);
       }
     } catch (e) { console.error(e); }
@@ -261,8 +268,22 @@ export default function DashboardPage() {
                 <div className="space-y-3">
                   {donasiPenerim.filter(d => ['Dikirim', 'Menunggu Konfirmasi'].includes(d.statusDonasi?.status)).map((item: any) => (
                     <div key={item.donasiId} className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
+                      <div className="flex items-center gap-4"> {/* Added flex and gap */}
+                        <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+                          {item.foto ? (
+                            <img
+                              src={`http://localhost:8080/uploads/${item.foto}`}
+                              alt={item.kategori}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as any).src = 'https://via.placeholder.com/150?text=No+Image';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-4xl">📦</div>
+                          )}
+                        </div>
+                        <div className="flex-1">
                           <h4 className="font-bold text-gray-900">{item.kategori}</h4>
                           <p className="text-sm text-gray-600">Status: <span className="font-bold">{item.statusDonasi?.status}</span></p>
                           <p className="text-xs text-gray-500 mt-1">Donatur: {item.donatur?.username}</p>
@@ -301,19 +322,29 @@ export default function DashboardPage() {
                 <div className="space-y-3">
                   {donasiBersedia.slice(0, 3).map((item: any) => (
                     <Link key={item.donasiId} href={`/detail-donasi/${item.donasiId}`}>
-                      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
-                        <div className="flex items-start justify-between">
+                      <div className="group bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
+                        <div className="flex items-center gap-4">
+                          <div className="w-32 h-32 bg-gray-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-inner">
+                            {item.foto ? (
+                              <img
+                                src={`http://localhost:8080/uploads/${item.foto}`}
+                                alt={item.kategori}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                onError={(e) => {
+                                  (e.target as any).src = 'https://via.placeholder.com/150?text=No+Image';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-5xl">📦</div>
+                            )}
+                          </div>
                           <div className="flex-1">
                             <h4 className="font-bold text-gray-900">{item.namaBarang || item.kategori || 'Donasi'}</h4>
                             <p className="text-xs text-gray-500 mt-1">👤 {item.donatur?.username || 'Donatur'}</p>
                             <p className="text-xs text-gray-500">📍 {item.lokasi?.alamatLengkap || item.lokasi || 'Lokasi tidak tersedia'}</p>
-                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsi}</p>
-                            <div className="flex gap-2 mt-3">
+                            <div className="flex gap-2 mt-2">
                               <span className="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-semibold">
                                 ✓ Tersedia
-                              </span>
-                              <span className="inline-block text-gray-500 text-xs">
-                                📅 {new Date(item.createdAt).toLocaleDateString('id-ID')}
                               </span>
                             </div>
                           </div>
@@ -357,12 +388,15 @@ export default function DashboardPage() {
                   {permintaan.map((item: any) => (
                     <Link key={item.permintaanId} href={`/permintaan/${item.permintaanId}`}>
                       <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-24 h-24 bg-blue-50 rounded-2xl flex items-center justify-center text-5xl flex-shrink-0 shadow-inner border border-blue-100/50">
+                            🤲
+                          </div>
                           <div className="flex-1">
                             <h4 className="font-bold text-gray-900">{item.jenisBarang}</h4>
                             <p className="text-xs text-gray-500 mt-1">📍 {item.lokasi?.alamatLengkap || 'Lokasi tidak tersedia'}</p>
-                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsiKebutuhan}</p>
-                            <div className="flex gap-2 mt-3">
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.deskripsiKebutuhan}</p>
+                            <div className="flex gap-2 mt-2">
                               <span className="inline-block bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-semibold">
                                 {item.jumlah}x
                               </span>
@@ -371,7 +405,7 @@ export default function DashboardPage() {
                               </span>
                             </div>
                           </div>
-                          <button className="text-gray-400 hover:text-gray-600 text-xl">→</button>
+                          <button className="text-gray-400 hover:text-gray-600 text-xl font-light">→</button>
                         </div>
                       </div>
                     </Link>
@@ -407,13 +441,21 @@ export default function DashboardPage() {
                 <div className="space-y-3">
                   {donasiPenerim.filter(d => d.statusDonasi?.status === 'Diterima').map((item: any) => (
                     <div key={item.donasiId} className="bg-white border border-green-100 rounded-2xl p-4 shadow-sm opacity-75 hover:opacity-100 transition-opacity">
-                      <div className="flex justify-between items-start">
-                        <div>
+                      <div className="flex items-center gap-4">
+                        <div className="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 grayscale opacity-60">
+                          {item.foto ? (
+                            <img
+                              src={`http://localhost:8080/uploads/${item.foto}`}
+                              alt={item.kategori}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-3xl">📦</div>
+                          )}
+                        </div>
+                        <div className="flex-1">
                           <h4 className="font-bold text-gray-900 strike-through">{item.namaBarang || item.kategori}</h4>
                           <p className="text-sm text-gray-600">Donatur: {item.donatur?.username}</p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Diterima pada: {new Date(item.updatedAt || Date.now()).toLocaleDateString('id-ID')}
-                          </p>
                         </div>
                         <span className="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-bold">
                           ✓ Selesai
@@ -463,7 +505,21 @@ export default function DashboardPage() {
                 <div className="space-y-3">
                   {donasiPerluDikonfirmasi.slice(0, 3).map((item: any) => (
                     <div key={item.donasiId} className="bg-red-50 border border-red-200 rounded-2xl p-4 hover:shadow-md hover:border-red-400 transition-all">
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4">
+                        <div className="w-32 h-32 bg-white rounded-2xl overflow-hidden flex-shrink-0 border border-red-100 shadow-sm">
+                          {item.foto ? (
+                            <img
+                              src={`http://localhost:8080/uploads/${item.foto}`}
+                              alt={item.kategori}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as any).src = 'https://via.placeholder.com/150?text=No+Image';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-5xl">📦</div>
+                          )}
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h4 className="font-bold text-gray-900">{item.kategori}</h4>
@@ -472,7 +528,7 @@ export default function DashboardPage() {
                             </span>
                           </div>
                           <p className="text-xs text-gray-500 mt-1">👤 Penerima: {item.penerima?.username || 'Seseorang'}</p>
-                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsi}</p>
+                          <p className="text-sm text-gray-600 mt-2 line-clamp-1">{item.deskripsi}</p>
 
                           <button
                             onClick={() => {
@@ -490,18 +546,18 @@ export default function DashboardPage() {
               )}
             </section>
 
-            {/* DONASI SAYA SECTION */}
+            {/* DONASI SAYA (AKTIF) SECTION */}
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-xl text-gray-800">📦 Donasi Saya</h3>
+                <h3 className="font-bold text-xl text-gray-800">📦 Donasi Aktif</h3>
                 <Link href="/donasi" className="text-primary text-sm font-semibold">Lihat Semua</Link>
               </div>
-              {donasiSaya.length === 0 ? (
+              {donasiSaya.filter((d: any) => !d.penerima && ['Tersedia', 'TERSEDIA', 'Available', 'AVAILABLE'].includes(d.statusDonasi?.status)).length === 0 ? (
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
                   <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-3xl mx-auto mb-3">
                     📦
                   </div>
-                  <p className="font-medium text-gray-900">Belum ada donasi</p>
+                  <p className="font-medium text-gray-900">Belum ada donasi aktif</p>
                   <p className="text-sm text-gray-500 mt-2 mb-4">Mulai berbagi barang berkualitas untuk membantu sesama.</p>
                   <Link href="/donasi" className="text-primary font-semibold border border-primary/20 px-4 py-2 rounded-full hover:bg-primary/5 inline-block">
                     Buat Donasi
@@ -509,28 +565,126 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {donasiSaya.slice(0, 3).map((item: any) => (
-                    <Link key={item.donasiId} href={`/donasi/${item.donasiId}`}>
-                      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-bold text-gray-900">{item.kategori || 'Donasi'}</h4>
-                            <p className="text-xs text-gray-500 mt-1">📍 {item.lokasi?.alamatLengkap || 'Lokasi tidak tersedia'}</p>
-                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsi || 'Tidak ada deskripsi'}</p>
-                            <div className="flex gap-2 mt-3">
-                              <span className="inline-block bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-semibold">
-                                {item.statusDonasi?.status || 'Pending'}
-                              </span>
-                              <span className="inline-block bg-yellow-50 text-yellow-700 text-xs px-2 py-1 rounded-full">
-                                {item.penerima ? '✓ Ada Penerima' : 'Menunggu'}
-                              </span>
+                  {donasiSaya
+                    .filter((d: any) => !d.penerima && ['Tersedia', 'TERSEDIA', 'Available', 'AVAILABLE'].includes(d.statusDonasi?.status))
+                    .slice(0, 5)
+                    .map((item: any) => (
+                      <Link key={item.donasiId} href={`/donasi/${item.donasiId}`}>
+                        <div className="group bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
+                          <div className="flex items-center gap-4">
+                            <div className="w-32 h-32 bg-gray-50 rounded-2xl overflow-hidden flex-shrink-0 shadow-inner">
+                              {item.foto ? (
+                                <img
+                                  src={`http://localhost:8080/uploads/${item.foto}`}
+                                  alt={item.kategori}
+                                  className="w-full h-full object-cover transition-transform hover:scale-105"
+                                  onError={(e) => {
+                                    (e.target as any).src = 'https://via.placeholder.com/150?text=No+Image';
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-5xl">📦</div>
+                              )}
                             </div>
+                            <div className="flex-1">
+                              <h4 className="font-bold text-gray-900">{item.kategori || 'Donasi'}</h4>
+                              <p className="text-xs text-gray-500 mt-1">📍 {item.lokasi?.alamatLengkap || 'Lokasi tidak tersedia'}</p>
+                              <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.deskripsi || 'Tidak ada deskripsi'}</p>
+                              <div className="flex gap-2 mt-2">
+                                <span className="inline-block bg-green-50 text-green-700 text-xs px-2 py-1 rounded-full font-semibold">
+                                  ✓ {item.statusDonasi?.status || 'Tersedia'}
+                                </span>
+                              </div>
+                            </div>
+                            <button className="text-gray-400 hover:text-gray-600 text-xl font-light">→</button>
                           </div>
-                          <button className="text-gray-400 hover:text-gray-600 text-xl">→</button>
+                        </div>
+                      </Link>
+                    ))}
+                </div>
+              )}
+            </section>
+
+            {/* DONASI SEDANG DIKIRIM SECTION */}
+            {donasiSaya.some((d: any) => d.statusDonasi?.status === 'Dikirim') && (
+              <section className="mb-8">
+                <h3 className="font-bold text-xl text-gray-800 mb-4">🚚 Sedang Dikirim</h3>
+                <div className="space-y-3">
+                  {donasiSaya.filter((d: any) => d.statusDonasi?.status === 'Dikirim').map((item: any) => (
+                    <div key={item.donasiId} className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-28 h-28 bg-white rounded-2xl overflow-hidden flex-shrink-0 border border-blue-100 shadow-sm">
+                          {item.foto ? (
+                            <img
+                              src={`http://localhost:8080/uploads/${item.foto}`}
+                              alt={item.kategori}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-4xl">📦</div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-gray-900">{item.kategori}</h4>
+                          <p className="text-sm text-gray-600">Penerima: <span className="font-bold">{item.penerima?.username}</span></p>
+                          <span className="inline-block bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold mt-1">
+                            KE KURIR / SEDANG DIJALAN
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] text-blue-500 italic">Menunggu penerima<br />konfirmasi...</p>
                         </div>
                       </div>
-                    </Link>
+                    </div>
                   ))}
+                </div>
+              </section>
+            )}
+
+            {/* RIWAYAT DONASI SAYA (HISTORY) */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-xl text-gray-800">📜 Riwayat Donasi</h3>
+                <Link href="/donasi/history" className="text-primary text-sm font-semibold">Lihat Semua</Link>
+              </div>
+              {donasiSaya.filter((d: any) => d.statusDonasi?.status === 'Diterima' || d.statusDonasi?.status === 'Selesai').length === 0 ? (
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+                  <p className="text-gray-500">Belum ada riwayat donasi yang tersalurkan.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {donasiSaya
+                    .filter((d: any) => d.statusDonasi?.status === 'Diterima' || d.statusDonasi?.status === 'Selesai')
+                    .slice(0, 10)
+                    .map((item: any) => (
+                      <Link key={item.donasiId} href={`/donasi/${item.donasiId}`}>
+                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 opacity-80 hover:opacity-100 hover:shadow-md transition-all cursor-pointer">
+                          <div className="flex items-center gap-4">
+                            <div className="w-24 h-24 bg-gray-50 rounded-xl overflow-hidden flex-shrink-0 grayscale opacity-60">
+                              {item.foto ? (
+                                <img
+                                  src={`http://localhost:8080/uploads/${item.foto}`}
+                                  alt={item.kategori}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-4xl">📦</div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-bold text-gray-900">{item.kategori}</h4>
+                              <p className="text-xs text-gray-500">Penerima: {item.penerima?.username || 'Seseorang'}</p>
+                              <div className="flex gap-2 mt-1">
+                                <span className="inline-block bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                  SELESAI / DITERIMA
+                                </span>
+                              </div>
+                            </div>
+                            <button className="text-gray-400 text-xl">→</button>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
                 </div>
               )}
             </section>
@@ -551,10 +705,13 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {allPermintaan.slice(0, 3).map((item: any) => (
+                  {allPermintaan.slice(0, 10).map((item: any) => (
                     <Link key={item.permintaanId} href={`/permintaan/${item.permintaanId}`}>
                       <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-green-500/50 transition-all cursor-pointer">
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-24 h-24 bg-green-50 rounded-2xl flex items-center justify-center text-5xl flex-shrink-0 shadow-inner border border-green-100/50">
+                            🤲
+                          </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <h4 className="font-bold text-gray-900">{item.jenisBarang}</h4>
@@ -564,8 +721,8 @@ export default function DashboardPage() {
                             </div>
                             <p className="text-xs text-gray-500 mt-1">👤 {item.penerima?.username || 'Penerima'}</p>
                             <p className="text-xs text-gray-500">📍 {item.lokasi?.alamatLengkap || 'Lokasi tidak tersedia'}</p>
-                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.deskripsiKebutuhan}</p>
-                            <div className="flex gap-2 mt-3">
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.deskripsiKebutuhan}</p>
+                            <div className="flex gap-2 mt-2">
                               <span className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full font-semibold">
                                 {item.status || 'Buka'}
                               </span>
@@ -574,7 +731,7 @@ export default function DashboardPage() {
                               </span>
                             </div>
                           </div>
-                          <button className="text-gray-400 hover:text-gray-600 text-xl">→</button>
+                          <button className="text-gray-400 hover:text-gray-600 text-xl font-light">→</button>
                         </div>
                       </div>
                     </Link>
@@ -582,10 +739,10 @@ export default function DashboardPage() {
                 </div>
               )}
             </section>
-          </div>
+          </div >
         )}
 
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

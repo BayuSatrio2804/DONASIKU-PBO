@@ -161,9 +161,18 @@ export default function DonasiBarangPage() {
             accept=".jpg,.jpeg,.png,.pdf"
           />
 
-          <div className="w-20 h-20 mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center">
+          <div className={`mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center overflow-hidden ${uploadedFile && uploadedFile.type.startsWith('image/') ? 'w-48 h-48 rounded-2xl' : 'w-20 h-20'}`}>
             {uploadedFile ? (
-              <span className="text-green-600 text-3xl">✓</span>
+              uploadedFile.type.startsWith('image/') ? (
+                <img
+                  src={URL.createObjectURL(uploadedFile)}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                  onLoad={(e) => URL.revokeObjectURL(e.currentTarget.src)}
+                />
+              ) : (
+                <span className="text-green-600 text-3xl">✓</span>
+              )
             ) : (
               <span className="text-blue-900 text-3xl">⬆️</span>
             )}
