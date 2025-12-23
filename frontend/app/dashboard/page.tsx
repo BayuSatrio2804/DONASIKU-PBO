@@ -176,21 +176,57 @@ export default function DashboardPage() {
     if (!user?.userId) return;
     if (!confirm('Apakah Anda yakin ingin membatalkan permintaan ini?')) return;
 
+    // Set loading state for this specific request
+    const button = document.querySelector(`[data-request-id="${permintaanId}"]`) as HTMLButtonElement;
+    if (button) {
+      button.disabled = true;
+      button.textContent = '⏳ Membatalkan...';
+    }
+
     try {
       const response = await fetch(`http://localhost:8080/api/permintaan/${permintaanId}/cancel?userId=${user.userId}`, {
         method: 'POST'
       });
+
       if (response.ok) {
-        alert('Permintaan berhasil dibatalkan');
-        // Refresh data
-        fetchPermintaan(user.userId);
+        // Success: show temporary success message
+        if (button) {
+          button.textContent = '✓ Dibatalkan';
+          button.className = 'bg-gray-500 text-white text-xs px-3 py-1 rounded-lg font-semibold cursor-not-allowed';
+        }
+        // Refresh data after a short delay
+        setTimeout(() => fetchPermintaan(user.userId), 1000);
       } else {
-        const txt = await response.text();
-        alert('Gagal membatalkan permintaan: ' + txt);
+        const errorText = await response.text();
+        console.error('Cancel failed:', errorText);
+
+        // Re-enable button and show error
+        if (button) {
+          button.disabled = false;
+          button.textContent = 'Batalkan';
+        }
+
+        // Show user-friendly error based on status code
+        if (response.status === 403) {
+          alert('❌ Anda tidak memiliki akses untuk membatalkan permintaan ini');
+        } else if (response.status === 404) {
+          alert('❌ Permintaan tidak ditemukan');
+        } else if (response.status === 409) {
+          alert('❌ Permintaan tidak dapat dibatalkan (sudah diproses)');
+        } else {
+          alert('❌ Gagal membatalkan permintaan: ' + (errorText || 'Kesalahan server'));
+        }
       }
     } catch (err) {
-      console.error(err);
-      alert('Gagal menghubungi server');
+      console.error('Network error:', err);
+
+      // Re-enable button
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'Batalkan';
+      }
+
+      alert('❌ Koneksi terputus. Gagal menghubungi server.');
     }
   };
 
@@ -432,6 +468,7 @@ export default function DashboardPage() {
                           </Link>
                           {['Open', 'Urgent', 'Pending'].includes(item.status) && (
                             <button
+                              data-request-id={item.permintaanId}
                               onClick={(e) => {
                                 e.preventDefault();
                                 handleCancelPermintaan(item.permintaanId);
