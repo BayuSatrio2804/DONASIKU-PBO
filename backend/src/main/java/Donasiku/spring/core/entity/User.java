@@ -33,6 +33,7 @@ public class User {
     @Column(name = "email", unique = true, nullable = false, length = 99)
     private String email;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @Column(name = "password", nullable = false, length = 319) // Panjang 319 sesuai SQL Anda
     private String password;
 
@@ -62,9 +63,9 @@ public class User {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
+
     // --- Inner Enums untuk Mapping SQL ENUM ---
-    
+
     public enum UserRole {
         donatur, penerima, admin
     }

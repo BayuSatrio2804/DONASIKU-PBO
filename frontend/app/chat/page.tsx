@@ -1,203 +1,167 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface Message {
-  id: number;
-  sender: 'user' | 'other';
-  text: string;
-  time: string;
+interface ChatMessage {
+  chatMessageId: number;
+  sender: {
+    userId: number;
+    username: string;
+    role: string;
+  };
+  message: string;
+  sentAt: string;
+  isRead: boolean;
+}
+
+interface Chat {
+  chatId: number;
+  donatur: {
+    userId: number;
+    username: string;
+    fotoProfil: string;
+    role: string;
+  };
+  penerima: {
+    userId: number;
+    username: string;
+    fotoProfil: string;
+    role: string;
+  };
+  startedAt: string;
 }
 
 interface ChatItem {
-  id: number;
+  chatId: number;
+  otherUserId: number;
   name: string;
   lastMessage: string;
   time: string;
   avatar: string;
-  unread?: number;
-  messages?: Message[];
+  unread: number;
 }
-
-const chatData: ChatItem[] = [
-  {
-    id: 1,
-    name: 'Kak Dias',
-    lastMessage: 'Halo Devhope · 9:40 AM',
-    time: '9:40 AM',
-    avatar: '👨‍💼',
-    messages: [
-      {
-        id: 1,
-        sender: 'other',
-        text: 'Halo, apa kabar?',
-        time: '9:35 AM',
-      },
-      {
-        id: 2,
-        sender: 'user',
-        text: 'Baik, kamu gimana?',
-        time: '9:38 AM',
-      },
-      {
-        id: 3,
-        sender: 'other',
-        text: 'Halo Devhope',
-        time: '9:40 AM',
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Edsel',
-    lastMessage: 'You: Ok, Halo semua · 9:25 AM',
-    time: '9:25 AM',
-    avatar: '👨‍🦰',
-    messages: [
-      {
-        id: 1,
-        sender: 'other',
-        text: 'Halo semua',
-        time: '9:20 AM',
-      },
-      {
-        id: 2,
-        sender: 'user',
-        text: 'Ok, Halo semua',
-        time: '9:25 AM',
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Nabil',
-    lastMessage: 'You: Salam kenal ya... · Fri',
-    time: 'Fri',
-    avatar: '👩‍🦱',
-    messages: [
-      {
-        id: 1,
-        sender: 'user',
-        text: 'Salam kenal ya...',
-        time: 'Fri',
-      },
-    ],
-  },
-  {
-    id: 4,
-    name: 'Firdha',
-    lastMessage: 'Selamat berlibur! · Fri',
-    time: 'Fri',
-    avatar: '👩‍🦱',
-    messages: [
-      {
-        id: 1,
-        sender: 'other',
-        text: 'Selamat berlibur!',
-        time: 'Fri',
-      },
-    ],
-  },
-  {
-    id: 5,
-    name: 'Radit',
-    lastMessage: 'Selamat beraktivitas... · Thu',
-    time: 'Thu',
-    avatar: '👨‍💼',
-    messages: [
-      {
-        id: 1,
-        sender: 'other',
-        text: 'Selamat beraktivitas...',
-        time: 'Thu',
-      },
-    ],
-  },
-  {
-    id: 6,
-    name: 'Zunadea',
-    lastMessage: 'Halo semuanya · Thu',
-    time: 'Thu',
-    avatar: '👨‍💼',
-    messages: [
-      {
-        id: 1,
-        sender: 'user',
-        text: 'Hi zuna 👋',
-        time: '11:31 AM',
-      },
-      {
-        id: 2,
-        sender: 'user',
-        text: 'apakah barangnya ada?',
-        time: '11:31 AM',
-      },
-      {
-        id: 3,
-        sender: 'other',
-        text: 'tentu ada',
-        time: '11:35 AM',
-      },
-      {
-        id: 4,
-        sender: 'other',
-        text: 'saya cek ulang ya',
-        time: '11:31 AM',
-      },
-      {
-        id: 5,
-        sender: 'user',
-        text: 'baik, terima kasih',
-        time: '11:31 AM',
-      },
-    ],
-  },
-];
 
 export default function ChatPage() {
   const router = useRouter();
-  const [chats, setChats] = useState<ChatItem[]>(chatData);
+  const [currentUser, setCurrentUser] = useState<{ userId: number; username: string } | null>(null);
+  const [chats, setChats] = useState<ChatItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 1. Initialize User & Load Chats
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sessionStr = localStorage.getItem('userSession');
+      if (sessionStr) {
+        const userData = JSON.parse(sessionStr);
+        setCurrentUser(userData);
+        fetchChatList(userData.userId);
+      } else {
+        router.push('/auth/login');
+      }
+    }
+  }, []);
+
+  // 2. Fetch Chat List from API
+  const fetchChatList = async (userId: number) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/chat/list/${userId}`);
+      if (!res.ok) throw new Error('Failed to fetch chats');
+      const data: Chat[] = await res.json();
+
+      // Transform API data to UI structure
+      const transformedChats: ChatItem[] = data.map((chat) => {
+        const isDonatur = chat.donatur.userId === userId;
+        const otherUser = isDonatur ? chat.penerima : chat.donatur;
+
+        return {
+          chatId: chat.chatId,
+          otherUserId: otherUser.userId,
+          name: otherUser.username,
+          lastMessage: 'Tap to view chat', // Backend belum kirim last message di list, default dulu
+          time: new Date(chat.startedAt).toLocaleDateString(),
+          avatar: otherUser.role === 'admin' ? '👨‍💻' : '👤', // Simple avatar logic
+          unread: 0
+        };
+      });
+      setChats(transformedChats);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching chats:', error);
+      setIsLoading(false);
+    }
+  };
+
+  // 3. Fetch Messages when Chat selected
+  useEffect(() => {
+    if (selectedChat) {
+      fetchMessages(selectedChat.chatId);
+      // Optional: Polling every 5 sec
+      const interval = setInterval(() => fetchMessages(selectedChat.chatId), 5000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedChat]);
+
+  const fetchMessages = async (chatId: number) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/chat/${chatId}/history`);
+      if (res.ok) {
+        const data: ChatMessage[] = await res.json();
+        setMessages(data);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
+
+  // Auto scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleChatClick = (chat: ChatItem) => {
+    setSelectedChat(chat);
+    setMessages([]);
+    setInputText('');
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputText.trim() || !selectedChat || !currentUser) return;
+
+    try {
+      // POST /api/chat/send?senderId=...&receiverId=...&message=...
+      const params = new URLSearchParams();
+      params.append('senderId', currentUser.userId.toString());
+      params.append('receiverId', selectedChat.otherUserId.toString());
+      params.append('message', inputText);
+
+      const res = await fetch(`http://localhost:8080/api/chat/send?${params.toString()}`, {
+        method: 'POST',
+      });
+
+      if (res.ok) {
+        setInputText('');
+        fetchMessages(selectedChat.chatId); // Refresh messages immediately
+      } else {
+        alert('Gagal mengirim pesan');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
 
   const filteredChats = chats.filter((chat) =>
     chat.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const handleChatClick = (chat: ChatItem) => {
-    setSelectedChat(chat);
-    setMessages(chat.messages || []);
-    setInputText('');
-    // Update unread count
-    setChats(chats.map(c => c.id === chat.id ? { ...c, unread: 0 } : c));
-  };
-
-  const handleSendMessage = () => {
-    if (inputText.trim() && selectedChat) {
-      const newMessage = {
-        id: messages.length + 1,
-        sender: 'user' as const,
-        text: inputText,
-        time: new Date().toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-      };
-      const updatedMessages = [...messages, newMessage];
-      setMessages(updatedMessages);
-      setInputText('');
-      
-      // Update chat last message
-      setChats(chats.map(chat => 
-        chat.id === selectedChat.id 
-          ? { ...chat, lastMessage: `You: ${inputText}`, messages: updatedMessages }
-          : chat
-      ));
-    }
-  };
 
   const handleBackFromChat = () => {
     setSelectedChat(null);
@@ -216,8 +180,8 @@ export default function ChatPage() {
             &lt;
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center text-lg">
-              {selectedChat.avatar}
+            <div className="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center text-lg text-white">
+              {selectedChat.avatar === '👤' ? selectedChat.name.charAt(0).toUpperCase() : selectedChat.avatar}
             </div>
             <h1 className="text-lg font-semibold text-gray-900">
               {selectedChat.name}
@@ -226,52 +190,47 @@ export default function ChatPage() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${
-                message.sender === 'user' ? 'justify-end' : 'justify-start'
-              }`}
-            >
+        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 bg-gray-50">
+          {messages.map((msg) => {
+            const isMe = msg.sender.userId === currentUser?.userId;
+            return (
               <div
-                className={`flex gap-2 max-w-xs ${
-                  message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'
-                }`}
+                key={msg.chatMessageId}
+                className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
               >
-                {message.sender === 'other' && (
-                  <div className="w-8 h-8 rounded-full bg-gray-300 shrink-0"></div>
-                )}
                 <div
-                  className={`rounded-2xl px-4 py-2 ${
-                    message.sender === 'user'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-900'
-                  }`}
-                >
-                  <p className="text-sm">{message.text}</p>
-                  <p
-                    className={`text-xs mt-1 ${
-                      message.sender === 'user'
-                        ? 'text-blue-100'
-                        : 'text-gray-600'
+                  className={`flex gap-2 max-w-[80%] ${isMe ? 'flex-row-reverse' : 'flex-row'
                     }`}
+                >
+                  {!isMe && (
+                    <div className="w-8 h-8 rounded-full bg-gray-300 shrink-0 flex items-center justify-center font-bold text-gray-700">
+                      {msg.sender.username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div
+                    className={`rounded-2xl px-4 py-2 ${isMe
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white border border-gray-200 text-gray-900'
+                      }`}
                   >
-                    {message.time}{' '}
-                    {message.sender === 'user' && '✓'}
-                  </p>
+                    <p className="text-sm">{msg.message}</p>
+                    <p
+                      className={`text-[10px] mt-1 text-right ${isMe ? 'text-blue-200' : 'text-gray-400'
+                        }`}
+                    >
+                      {new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area */}
-        <div className="border-t border-gray-200 px-4 py-4">
+        <div className="border-t border-gray-200 px-4 py-4 bg-white">
           <div className="flex items-center gap-3 bg-gray-100 rounded-full px-4 py-3">
-            <button className="text-gray-600 hover:text-gray-900 text-lg">
-              😊
-            </button>
             <input
               type="text"
               value={inputText}
@@ -281,17 +240,15 @@ export default function ChatPage() {
                   handleSendMessage();
                 }
               }}
-              placeholder="Tulis pesan anda"
+              placeholder="Tulis pesan anda..."
               className="flex-1 bg-transparent outline-none text-gray-900 placeholder-gray-500"
             />
-            <button className="text-gray-600 hover:text-gray-900 text-lg">
-              ➕
-            </button>
             <button
               onClick={handleSendMessage}
-              className="text-blue-500 hover:text-blue-600 text-lg"
+              disabled={!inputText.trim()}
+              className="text-blue-600 hover:text-blue-700 disabled:opacity-50 text-xl font-bold"
             >
-              ✈️
+              ➤
             </button>
           </div>
         </div>
@@ -309,6 +266,7 @@ export default function ChatPage() {
         >
           &lt;
         </button>
+        <span className="font-bold text-lg text-black">Pesan</span>
       </div>
 
       {/* Tabs - Fixed */}
@@ -329,7 +287,7 @@ export default function ChatPage() {
           </span>
           <input
             type="text"
-            placeholder="Search"
+            placeholder="Cari user..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-gray-100 rounded-full py-3 pl-12 pr-4 outline-none focus:bg-white focus:border focus:border-gray-300 placeholder-gray-500 text-gray-900"
@@ -339,22 +297,17 @@ export default function ChatPage() {
 
       {/* Chat List - Scrollable */}
       <div className="mt-48 flex-1 overflow-y-auto bg-white divide-y divide-gray-200">
-        {filteredChats.length > 0 ? (
+        {isLoading ? (
+          <div className="p-8 text-center text-gray-500">Memuat chat...</div>
+        ) : filteredChats.length > 0 ? (
           filteredChats.map((chat) => (
             <button
-              key={chat.id}
+              key={chat.chatId}
               onClick={() => handleChatClick(chat)}
               className="w-full text-left px-6 py-4 hover:bg-gray-50 transition-colors flex items-center gap-4 relative"
             >
-              <div className="relative">
-                <div className="w-12 h-12 rounded-full bg-orange-400 flex items-center justify-center text-xl shrink-0">
-                  {chat.avatar}
-                </div>
-                {chat.unread && chat.unread > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
-                    {chat.unread}
-                  </div>
-                )}
+              <div className="w-12 h-12 rounded-full bg-orange-400 flex items-center justify-center text-xl shrink-0 text-white font-bold">
+                {chat.name.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-gray-900">
@@ -369,7 +322,7 @@ export default function ChatPage() {
           ))
         ) : (
           <div className="px-6 py-12 text-center text-gray-500">
-            Tidak ada chat
+            Belum ada riwayat chat.
           </div>
         )}
       </div>

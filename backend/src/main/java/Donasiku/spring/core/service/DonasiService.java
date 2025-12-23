@@ -18,14 +18,20 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class DonasiService {
 
-    @Autowired private DonasiRepository donasiRepository;
-    @Autowired private StatusDonasiRepository statusRepository;
-    @Autowired private UserRepository userRepository; // Asumsi ada UserRepository
-    @Autowired private LokasiRepository lokasiRepository;
+    @Autowired
+    private DonasiRepository donasiRepository;
+    @Autowired
+    private StatusDonasiRepository statusRepository;
+    @Autowired
+    private UserRepository userRepository; // Asumsi ada UserRepository
+    @Autowired
+    private LokasiRepository lokasiRepository;
 
-    // --- FR-03: Donatur Memposting Barang Donasi (Extended with File and Location String) ---
+    // --- FR-03: Donatur Memposting Barang Donasi (Extended with File and Location
+    // String) ---
     @Transactional
-    public Donasi createDonasiWithFile(DonasiRequest request, String lokasiName, org.springframework.web.multipart.MultipartFile file) {
+    public Donasi createDonasiWithFile(DonasiRequest request, String lokasiName,
+            org.springframework.web.multipart.MultipartFile file) {
         // 1. Validasi User
         User donatur = userRepository.findById(request.getDonaturId())
                 .orElseThrow(() -> new RuntimeException("Donatur tidak ditemukan"));
@@ -36,7 +42,7 @@ public class DonasiService {
                     Lokasi newLokasi = new Lokasi();
                     newLokasi.setAlamatLengkap(lokasiName);
                     newLokasi.setGarisLintang(0.0); // Dummy for now
-                    newLokasi.setGarisBujur(0.0);   // Dummy for now
+                    newLokasi.setGarisBujur(0.0); // Dummy for now
                     return lokasiRepository.save(newLokasi);
                 });
 
@@ -86,33 +92,37 @@ public class DonasiService {
 
         // 3. Validasi Hak Akses (Security Logic)
         // 3. Validasi Hak Akses (Security Logic)
-        if (userId == null) throw new RuntimeException("User ID tidak valid (null)");
-        
+        if (userId == null)
+            throw new RuntimeException("User ID tidak valid (null)");
+
         Integer donaturId = donasi.getDonatur() != null ? donasi.getDonatur().getUserId() : -1;
         Integer penerimaId = donasi.getPenerima() != null ? donasi.getPenerima().getUserId() : -1;
-        
+
         boolean isDonatur = donaturId.equals(userId);
         boolean isPenerima = penerimaId.equals(userId);
 
         // FR-14: Donatur mengubah status jadi "Dikirim"
         if (statusBaru.equalsIgnoreCase("Dikirim")) {
-            if (!isDonatur) throw new RuntimeException("Hanya Donatur yang berhak mengubah status menjadi Dikirim.");
+            if (!isDonatur)
+                throw new RuntimeException("Hanya Donatur yang berhak mengubah status menjadi Dikirim.");
         }
-        
+
         // FR-15: Penerima mengubah status jadi "Diterima"
         else if (statusBaru.equalsIgnoreCase("Diterima")) {
-            if (!isPenerima) throw new RuntimeException("Hanya Penerima yang berhak mengubah status menjadi Diterima.");
-        } 
-        
+            if (!isPenerima)
+                throw new RuntimeException("Hanya Penerima yang berhak mengubah status menjadi Diterima.");
+        }
+
         else {
             // Validasi umum untuk status lain jika perlu
-             if (!isDonatur && !isPenerima) throw new RuntimeException("Anda tidak memiliki akses ke donasi ini.");
+            if (!isDonatur && !isPenerima)
+                throw new RuntimeException("Anda tidak memiliki akses ke donasi ini.");
         }
 
         // 4. Update
         donasi.setStatusDonasi(statusObj);
         donasi.setUpdatedAt(LocalDateTime.now());
-        
+
         return donasiRepository.save(donasi);
     }
 
@@ -149,8 +159,44 @@ public class DonasiService {
     public List<Donasi> getAllDonasi() {
         return donasiRepository.findAll();
     }
-    
+
     public Donasi getDonasiById(Integer id) {
         return donasiRepository.findById(id).orElseThrow(() -> new RuntimeException("Donasi tidak ditemukan"));
+    }
+
+    // --- FR-XX: Edit & Hapus Donasi (Sesuai Diagram) ---
+    @Transactional
+    public void hapusDonasi(Integer donasiId, Integer userId) {
+        Donasi donasi = donasiRepository.findById(donasiId)
+                .orElseThrow(() -> new RuntimeException("Donasi tidak ditemukan"));
+
+        if (!donasi.getDonatur().getUserId().equals(userId)) {
+            throw new RuntimeException("Anda bukan pemilik donasi ini.");
+        }
+
+        donasiRepository.delete(donasi);
+    }
+
+    @Transactional
+    public void editDonasi(Integer donasiId, Donasi updatedData, Integer userId) {
+        Donasi donasi = donasiRepository.findById(donasiId)
+                .orElseThrow(() -> new RuntimeException("Donasi tidak ditemukan"));
+
+        if (!donasi.getDonatur().getUserId().equals(userId)) {
+            throw new RuntimeException("Anda bukan pemilik donasi ini.");
+        }
+
+        if (updatedData.getDeskripsi() != null)
+            donasi.setDeskripsi(updatedData.getDeskripsi());
+        if (updatedData.getKategori() != null)
+            donasi.setKategori(updatedData.getKategori());
+        if (updatedData.getJumlah() != null)
+            donasi.setJumlah(updatedData.getJumlah());
+        // Foto handle separately usually, but minimal logic here
+        if (updatedData.getFoto() != null)
+            donasi.setFoto(updatedData.getFoto());
+
+        donasi.setUpdatedAt(LocalDateTime.now());
+        donasiRepository.save(donasi);
     }
 }

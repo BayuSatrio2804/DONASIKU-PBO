@@ -28,7 +28,7 @@ public class ChatMessage {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chat_id", nullable = false)
     private Chat chat;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_user_id", nullable = false)
     private User sender;
@@ -36,6 +36,9 @@ public class ChatMessage {
     @Column(name = "message", columnDefinition = "TEXT", nullable = false)
     private String message;
 
-    @Column(name = "timestamp", updatable = false)
-    private LocalDateTime timestamp;
+    @Column(name = "sent_at", updatable = false)
+    private LocalDateTime sentAt;
+
+    @Column(name = "is_read")
+    private Boolean isRead;
 }

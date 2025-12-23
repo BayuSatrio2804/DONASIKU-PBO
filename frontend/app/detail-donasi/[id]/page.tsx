@@ -79,6 +79,38 @@ export default function DetailDonasiPage() {
     }
   };
 
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Load User Session
+    if (typeof window !== 'undefined') {
+      const sessionStr = localStorage.getItem('userSession');
+      if (sessionStr) {
+        setCurrentUser(JSON.parse(sessionStr));
+      }
+    }
+  }, []);
+
+  const handleDelete = async () => {
+    if (!confirm('Apakah Anda yakin ingin menghapus donasi ini?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/donasi/${donasi_id}?userId=${currentUser.userId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        alert('Donasi berhasil dihapus');
+        router.push('/dashboard');
+      } else {
+        const txt = await response.text();
+        alert('Gagal menghapus: ' + txt);
+      }
+    } catch (e) {
+      alert('Terjadi kesalahan saat menghapus');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -100,6 +132,8 @@ export default function DetailDonasiPage() {
       </div>
     );
   }
+
+  const isOwner = currentUser && donasi.donatur && currentUser.userId === donasi.donatur.userId;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
@@ -156,6 +190,11 @@ export default function DetailDonasiPage() {
                 <span className="inline-block bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
                   ✓ Tersedia
                 </span>
+                {isOwner && (
+                  <span className="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+                    Milik Anda
+                  </span>
+                )}
               </div>
             </div>
 
@@ -201,12 +240,14 @@ export default function DetailDonasiPage() {
             </div>
 
             {/* Info Pengajuan */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <h3 className="font-bold text-gray-900 mb-2">ℹ️ Informasi Pengajuan</h3>
-              <p className="text-sm text-gray-700">
-                Dengan mengklik tombol "Ambil Donasi", Anda akan diarahkan ke halaman Permintaan Barang untuk mengajukan permintaan barang ini.
-              </p>
-            </div>
+            {!isOwner && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <h3 className="font-bold text-gray-900 mb-2">ℹ️ Informasi Pengajuan</h3>
+                <p className="text-sm text-gray-700">
+                  Dengan mengklik tombol "Ambil Donasi", Anda akan diarahkan ke halaman Permintaan Barang untuk mengajukan permintaan barang ini.
+                </p>
+              </div>
+            )}
 
             {/* Kondisi Barang */}
             {donasi.kondisi && (
@@ -228,19 +269,40 @@ export default function DetailDonasiPage() {
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-4 border-t border-gray-200">
-              <button
-                onClick={() => router.back()}
-                className="flex-1 border-2 border-primary text-primary py-3 rounded-xl font-semibold hover:bg-primary/5 transition"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleAmbilDonasi}
-                disabled={taking}
-                className="flex-1 bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
-              >
-                {taking ? '⏳ Memproses...' : '✓ Ambil Donasi'}
-              </button>
+              {isOwner ? (
+                <>
+                  <button
+                    onClick={handleDelete}
+                    className="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition"
+                  >
+                    🗑 Hapus Donasi
+                  </button>
+                  {/* Placeholder for Edit feature if pages exists
+                    <button
+                        onClick={() => router.push(`/donasi/edit/${donasi_id}`)}
+                        className="flex-1 bg-yellow-500 text-white py-3 rounded-xl font-semibold hover:bg-yellow-600 transition"
+                    >
+                        ✏️ Edit Donasi
+                    </button>
+                    */}
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => router.back()}
+                    className="flex-1 border-2 border-primary text-primary py-3 rounded-xl font-semibold hover:bg-primary/5 transition"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={handleAmbilDonasi}
+                    disabled={taking}
+                    className="flex-1 bg-primary text-white py-3 rounded-xl font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  >
+                    {taking ? '⏳ Memproses...' : '✓ Ambil Donasi'}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

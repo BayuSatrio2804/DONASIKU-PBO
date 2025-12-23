@@ -9,5 +9,5 @@ import Donasiku.spring.core.entity.ChatMessage;
 
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Integer> {
-    List<ChatMessage> findByChat_ChatIdOrderByTimestampAsc(Integer chatId);
+    List<ChatMessage> findByChat_ChatIdOrderBySentAtAsc(Integer chatId);
 }

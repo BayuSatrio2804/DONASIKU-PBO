@@ -130,13 +130,22 @@ export default function ProfilePage() {
           </div>
 
           {/* Change Role Button */}
-          <button
-            onClick={() => setShowRoleModal(true)}
-            className="w-full flex items-center justify-center gap-2 py-3 text-blue-900 font-semibold border-t border-gray-200 hover:bg-gray-50 transition-colors"
-          >
-            <span>👥</span>
-            <span>Cek Ketentuan Role</span>
-          </button>
+          <div className="flex border-t border-gray-200 divide-x divide-gray-200">
+            <button
+              onClick={() => router.push('/profile/edit')}
+              className="flex-1 py-3 text-gray-700 font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+            >
+              <span>✏️</span>
+              <span>Edit Profil</span>
+            </button>
+            <button
+              onClick={() => setShowRoleModal(true)}
+              className="flex-1 py-3 text-blue-900 font-semibold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+            >
+              <span>👥</span>
+              <span>Ketentuan Role</span>
+            </button>
+          </div>
         </div>
 
         {/* Account Settings Section */}
