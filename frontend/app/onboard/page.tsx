@@ -18,7 +18,7 @@ const slides: OnboardingSlide[] = [
     title: 'Donasi Menjadi Mudah',
     description:
       'Donasiku adalah platform untuk memberikan donasi barang layak pakai ke berbagai kalangan, ini merupakan program sosial untuk membantu sesama manusia.',
-    image: '/onboard-1.jpg',
+    image: '/onboard-1.png',
     buttonText: 'Lanjut',
   },
   {
@@ -26,7 +26,7 @@ const slides: OnboardingSlide[] = [
     title: 'Punya barang bekas layak pakai ?',
     description:
       'Jangan biarkan barang tak terpakai menumpuk. Donasikan dengan mudah lewat Donasiku dan bantu mereka yang membutuhkan.',
-    image: '/onboard-2.jpg',
+    image: '/onboard-2.png',
     buttonText: 'Lanjut',
   },
   {
@@ -34,7 +34,7 @@ const slides: OnboardingSlide[] = [
     title: 'Maknai setiap hidup sebagai donatur',
     description:
       'Setiap donasi membawa harapan baru, jadilah bagian dari perubahan dan kebahagiaan bagi sesama.',
-    image: '/onboard-3.jpg',
+    image: '/onboard-3.png',
     buttonText: 'Mulai Donasi',
   },
 ];
@@ -69,12 +69,12 @@ export default function OnboardingPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
         {/* Image */}
         <div className="w-full mb-8">
-          <div className="relative w-full h-64 md:h-80 rounded-2xl overflow-hidden">
+          <div className="relative w-full max-w-4xl mx-auto h-64 md:h-96 rounded-2xl overflow-hidden">
             <Image
               src={slides[currentSlide].image}
               alt={slides[currentSlide].title}
               fill
-              className="object-cover"
+              className="object-contain"
               priority
             />
           </div>
@@ -104,7 +104,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Navigation */}
-        <div className="w-full flex gap-4 flex-col-reverse sm:flex-row">
+        <div className="w-full max-w-md mx-auto flex gap-4 flex-col-reverse sm:flex-row">
           <Link
             href="/auth/login"
             className="flex-1 py-3 px-6 text-center font-semibold text-gray-700 border-2 border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
