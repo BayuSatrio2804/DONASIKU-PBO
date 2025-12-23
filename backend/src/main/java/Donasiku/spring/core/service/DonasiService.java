@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -198,5 +199,36 @@ public class DonasiService {
 
         donasi.setUpdatedAt(LocalDateTime.now());
         donasiRepository.save(donasi);
+    }
+
+    // --- Class Diagram: cariDonasi(kategori, lokasi) ---
+    public List<Donasi> cariDonasi(String kategori, Double lat, Double lon, Double radiusKm) {
+        List<Donasi> allDonasi = donasiRepository.findAll();
+
+        // Filter by kategori if provided
+        if (kategori != null && !kategori.trim().isEmpty()) {
+            allDonasi = allDonasi.stream()
+                    .filter(d -> d.getKategori() != null &&
+                            d.getKategori().equalsIgnoreCase(kategori.trim()))
+                    .collect(Collectors.toList());
+        }
+
+        // Filter by location if all location params provided
+        if (lat != null && lon != null && radiusKm != null && radiusKm > 0) {
+            Lokasi searchLocation = new Lokasi();
+            searchLocation.setGarisLintang(lat);
+            searchLocation.setGarisBujur(lon);
+
+            allDonasi = allDonasi.stream()
+                    .filter(d -> {
+                        if (d.getLokasi() == null)
+                            return false;
+                        double distance = d.getLokasi().hitungJarak(searchLocation);
+                        return distance <= radiusKm;
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        return allDonasi;
     }
 }

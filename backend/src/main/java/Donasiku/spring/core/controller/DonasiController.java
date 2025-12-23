@@ -79,10 +79,25 @@ public class DonasiController {
         }
     }
 
-    // Helper: List Semua Donasi
+    // Helper: List/Search Donasi (Class Diagram: cariDonasi)
     @GetMapping
-    public ResponseEntity<List<Donasi>> listDonasi() {
-        return ResponseEntity.ok(donasiService.getAllDonasi());
+    public ResponseEntity<List<Donasi>> searchDonasi(
+            @RequestParam(required = false) String kategori,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lon,
+            @RequestParam(required = false) Double radius) {
+        try {
+            // Validate location parameters - all must be provided together
+            if ((lat != null || lon != null || radius != null) &&
+                    !(lat != null && lon != null && radius != null)) {
+                return ResponseEntity.badRequest().body(null);
+            }
+
+            List<Donasi> results = donasiService.cariDonasi(kategori, lat, lon, radius);
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(null);
+        }
     }
 
     // FR-XX: Hapus Donasi dengan Error Handling

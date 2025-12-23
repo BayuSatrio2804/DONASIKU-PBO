@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import Donasiku.spring.core.entity.Donasi;
+
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -88,6 +91,23 @@ public class UserController {
             return ResponseEntity.status(404).body("Error: User tidak ditemukan - " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: Gagal memperbarui profil - " + e.getMessage());
+        }
+    }
+
+    // FR-XX: Lihat Riwayat Donasi (Class Diagram: lihatRiwayat)
+    @GetMapping("/{userId}/riwayat")
+    public ResponseEntity<?> getRiwayatDonasi(@PathVariable Integer userId) {
+        try {
+            if (userId == null || userId <= 0) {
+                return ResponseEntity.badRequest().body("Error: User ID tidak valid");
+            }
+
+            List<Donasi> riwayat = userService.getRiwayatDonasi(userId);
+            return ResponseEntity.ok(riwayat);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body("Error: User tidak ditemukan");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: Gagal mengambil riwayat donasi");
         }
     }
 }
