@@ -24,11 +24,11 @@ public class PermintaanDonasi {
 
     @Column(name = "deskripsi_kebutuhan", columnDefinition = "TEXT")
     private String deskripsiKebutuhan;
-    
+
     // FK penerima_user_id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "penerima_user_id", nullable = false)
-    private User penerima; 
+    private User penerima;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "donatur_user_id") // Nullable
@@ -38,10 +38,13 @@ public class PermintaanDonasi {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lokasi_id", nullable = false)
     private Lokasi lokasi;
-    
+
     @Column(name = "status", length = 99)
     private String status; // Status permintaan (open/fulfilled/closed)
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

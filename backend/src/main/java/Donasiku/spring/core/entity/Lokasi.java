@@ -34,9 +34,34 @@ public class Lokasi {
     @Enumerated(EnumType.STRING)
     @Column(name = "tipe_lokasi")
     private TipeLokasi tipeLokasi;
-    
+
     // Enum Java untuk memetakan ENUM SQL
     public enum TipeLokasi {
         donatur, penerima, event, lainnya
+    }
+
+    // --- Method Sesuai Class Diagram: hitungJarak(Lokasi l) ---
+    // Menggunakan Haversine Formula untuk menghitung jarak dalam KM
+    public double hitungJarak(Lokasi lokasiLain) {
+        if (lokasiLain == null)
+            return -1;
+
+        final int R = 6371; // Radius bumi dalam KM
+
+        double lat1 = this.garisLintang;
+        double lon1 = this.garisBujur;
+        double lat2 = lokasiLain.getGarisLintang();
+        double lon2 = lokasiLain.getGarisBujur();
+
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                        * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return R * c; // Jarak dalam Kilometer
     }
 }

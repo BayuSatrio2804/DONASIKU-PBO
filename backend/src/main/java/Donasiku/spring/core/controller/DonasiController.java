@@ -35,7 +35,7 @@ public class DonasiController {
             request.setKategori(namaBarang); // Map namaBarang to kategori
             request.setJumlah(jumlah);
             request.setDonaturId(userId);
-            
+
             Donasi donasi = donasiService.createDonasiWithFile(request, lokasi, file);
             return new ResponseEntity<>(donasi, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -78,10 +78,35 @@ public class DonasiController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }
     }
-    
+
     // Helper: List Semua Donasi
     @GetMapping
     public ResponseEntity<List<Donasi>> listDonasi() {
         return ResponseEntity.ok(donasiService.getAllDonasi());
+    }
+
+    // FR-XX: Hapus Donasi
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> hapusDonasi(@PathVariable("id") Integer donasiId, @RequestParam("userId") Integer userId) {
+        try {
+            donasiService.hapusDonasi(donasiId, userId);
+            return ResponseEntity.ok("Donasi berhasil dihapus.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // FR-XX: Edit Donasi
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editDonasi(
+            @PathVariable("id") Integer donasiId,
+            @RequestBody Donasi updatedData,
+            @RequestParam("userId") Integer userId) {
+        try {
+            donasiService.editDonasi(donasiId, updatedData, userId);
+            return ResponseEntity.ok("Donasi berhasil diupdate.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

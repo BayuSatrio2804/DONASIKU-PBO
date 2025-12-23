@@ -172,6 +172,28 @@ export default function DashboardPage() {
     }
   };
 
+  const handleCancelPermintaan = async (permintaanId: number) => {
+    if (!user?.userId) return;
+    if (!confirm('Apakah Anda yakin ingin membatalkan permintaan ini?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/permintaan/${permintaanId}/cancel?userId=${user.userId}`, {
+        method: 'POST'
+      });
+      if (response.ok) {
+        alert('Permintaan berhasil dibatalkan');
+        // Refresh data
+        fetchPermintaan(user.userId);
+      } else {
+        const txt = await response.text();
+        alert('Gagal membatalkan permintaan: ' + txt);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Gagal menghubungi server');
+    }
+  };
+
 
 
   const [donasiPenerim, setDonasiPenerim] = useState<any[]>([]);
@@ -386,29 +408,42 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-3">
                   {permintaan.map((item: any) => (
-                    <Link key={item.permintaanId} href={`/permintaan/${item.permintaanId}`}>
-                      <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
-                        <div className="flex items-center gap-4">
-                          <div className="w-24 h-24 bg-blue-50 rounded-2xl flex items-center justify-center text-5xl flex-shrink-0 shadow-inner border border-blue-100/50">
-                            🤲
+                    <div key={item.permintaanId} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all">
+                      <div className="flex items-center gap-4">
+                        <div className="w-24 h-24 bg-blue-50 rounded-2xl flex items-center justify-center text-5xl flex-shrink-0 shadow-inner border border-blue-100/50">
+                          🤲
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-gray-900">{item.jenisBarang}</h4>
+                          <p className="text-xs text-gray-500 mt-1">📍 {item.lokasi?.alamatLengkap || 'Lokasi tidak tersedia'}</p>
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.deskripsiKebutuhan}</p>
+                          <div className="flex gap-2 mt-2">
+                            <span className="inline-block bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-semibold">
+                              {item.jumlah}x
+                            </span>
+                            <span className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">
+                              {item.status}
+                            </span>
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-bold text-gray-900">{item.jenisBarang}</h4>
-                            <p className="text-xs text-gray-500 mt-1">📍 {item.lokasi?.alamatLengkap || 'Lokasi tidak tersedia'}</p>
-                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.deskripsiKebutuhan}</p>
-                            <div className="flex gap-2 mt-2">
-                              <span className="inline-block bg-primary/10 text-primary text-xs px-2 py-1 rounded-full font-semibold">
-                                {item.jumlah}x
-                              </span>
-                              <span className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">
-                                {item.status}
-                              </span>
-                            </div>
-                          </div>
-                          <button className="text-gray-400 hover:text-gray-600 text-xl font-light">→</button>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Link href={`/permintaan/${item.permintaanId}`}>
+                            <button className="text-gray-400 hover:text-gray-600 text-xl font-light">→</button>
+                          </Link>
+                          {['Open', 'Urgent', 'Pending'].includes(item.status) && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleCancelPermintaan(item.permintaanId);
+                              }}
+                              className="bg-red-500 text-white text-xs px-3 py-1 rounded-lg font-semibold hover:bg-red-600 transition"
+                            >
+                              Batalkan
+                            </button>
+                          )}
                         </div>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
               )}

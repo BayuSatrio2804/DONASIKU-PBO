@@ -73,7 +73,7 @@ public class PermintaanController {
     // FR-09: Donatur mengajukan penawaran untuk memenuhi permintaan
     @PostMapping("/{id}/offer")
     public ResponseEntity<?> offer(@PathVariable("id") Integer permintaanId,
-                                   @RequestParam("donaturId") Integer donaturId) {
+            @RequestParam("donaturId") Integer donaturId) {
         try {
             PermintaanKonfirmasi k = permintaanService.offerToFulfill(permintaanId, donaturId);
             return new ResponseEntity<>(k, HttpStatus.CREATED);
@@ -85,8 +85,8 @@ public class PermintaanController {
     // FR-10: Penerima mengkonfirmasi salah satu penawaran
     @PostMapping("/{id}/confirm/{konfirmasiId}")
     public ResponseEntity<?> confirm(@PathVariable("id") Integer permintaanId,
-                                     @PathVariable("konfirmasiId") Integer konfirmasiId,
-                                     @RequestParam("penerimaId") Integer penerimaId) {
+            @PathVariable("konfirmasiId") Integer konfirmasiId,
+            @RequestParam("penerimaId") Integer penerimaId) {
         try {
             PermintaanKonfirmasi confirmed = permintaanService.confirmOffer(permintaanId, konfirmasiId, penerimaId);
             return ResponseEntity.ok(confirmed);
@@ -95,11 +95,10 @@ public class PermintaanController {
         }
     }
 
-
     // New Endpoint for Simple Fulfillment (Donor accepts request directly)
     @PostMapping("/{id}/fulfill")
     public ResponseEntity<?> fulfill(@PathVariable("id") Integer permintaanId,
-                                     @RequestParam("donaturId") Integer donaturId) {
+            @RequestParam("donaturId") Integer donaturId) {
         try {
             PermintaanDonasi p = permintaanService.fulfillPermintaan(permintaanId, donaturId);
             return ResponseEntity.ok(p);
@@ -116,6 +115,18 @@ public class PermintaanController {
             return ResponseEntity.ok(p);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    // FR-XX: Batalkan Permintaan
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<?> batalkanPermintaan(@PathVariable("id") Integer permintaanId,
+            @RequestParam("userId") Integer userId) {
+        try {
+            permintaanService.batalkan(permintaanId, userId);
+            return ResponseEntity.ok("Permintaan berhasil dibatalkan.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }
