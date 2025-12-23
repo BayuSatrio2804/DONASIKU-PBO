@@ -85,28 +85,89 @@ public class DonasiController {
         return ResponseEntity.ok(donasiService.getAllDonasi());
     }
 
-    // FR-XX: Hapus Donasi
+    // FR-XX: Hapus Donasi dengan Error Handling
     @DeleteMapping("/{id}")
     public ResponseEntity<?> hapusDonasi(@PathVariable("id") Integer donasiId, @RequestParam("userId") Integer userId) {
         try {
+            // Validasi input
+            if (donasiId == null || donasiId <= 0) {
+                return ResponseEntity.badRequest().body("Error: Donasi ID tidak valid");
+            }
+
+            if (userId == null || userId <= 0) {
+                return ResponseEntity.badRequest().body("Error: User ID tidak valid");
+            }
+
             donasiService.hapusDonasi(donasiId, userId);
             return ResponseEntity.ok("Donasi berhasil dihapus.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body("Error: Anda tidak memiliki akses untuk menghapus donasi ini");
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.status(404).body("Error: Donasi tidak ditemukan - " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: Gagal menghapus donasi");
         }
     }
 
-    // FR-XX: Edit Donasi
+    // FR-XX: Edit Donasi dengan Error Handling
     @PutMapping("/{id}")
     public ResponseEntity<?> editDonasi(
             @PathVariable("id") Integer donasiId,
             @RequestBody Donasi updatedData,
             @RequestParam("userId") Integer userId) {
         try {
+            // Validasi input
+            if (donasiId == null || donasiId <= 0) {
+                return ResponseEntity.badRequest().body("Error: Donasi ID tidak valid");
+            }
+
+            if (userId == null || userId <= 0) {
+                return ResponseEntity.badRequest().body("Error: User ID tidak valid");
+            }
+
+            if (updatedData == null) {
+                return ResponseEntity.badRequest().body("Error: Data donasi tidak boleh kosong");
+            }
+
+            // Validasi field deskripsi
+            if (updatedData.getDeskripsi() != null) {
+                String desc = updatedData.getDeskripsi().trim();
+                if (desc.isEmpty()) {
+                    return ResponseEntity.badRequest().body("Error: Deskripsi tidak boleh kosong");
+                }
+                if (desc.length() > 1000) {
+                    return ResponseEntity.badRequest().body("Error: Deskripsi maksimal 1000 karakter");
+                }
+            }
+
+            // Validasi field kategori
+            if (updatedData.getKategori() != null) {
+                String kategori = updatedData.getKategori().trim();
+                if (kategori.isEmpty()) {
+                    return ResponseEntity.badRequest().body("Error: Kategori tidak boleh kosong");
+                }
+                if (kategori.length() > 100) {
+                    return ResponseEntity.badRequest().body("Error: Kategori maksimal 100 karakter");
+                }
+            }
+
+            // Validasi field jumlah
+            if (updatedData.getJumlah() != null && updatedData.getJumlah() <= 0) {
+                return ResponseEntity.badRequest().body("Error: Jumlah harus lebih dari 0");
+            }
+
             donasiService.editDonasi(donasiId, updatedData, userId);
             return ResponseEntity.ok("Donasi berhasil diupdate.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body("Error: Anda tidak memiliki akses untuk mengedit donasi ini");
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.status(404).body("Error: Donasi tidak ditemukan - " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: Gagal memperbarui donasi");
         }
     }
 }
