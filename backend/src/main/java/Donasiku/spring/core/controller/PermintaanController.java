@@ -118,15 +118,32 @@ public class PermintaanController {
         }
     }
 
-    // FR-XX: Batalkan Permintaan
+    // FR-XX: Batalkan Permintaan dengan Error Handling
     @PostMapping("/{id}/cancel")
     public ResponseEntity<?> batalkanPermintaan(@PathVariable("id") Integer permintaanId,
             @RequestParam("userId") Integer userId) {
         try {
+            // Validasi input
+            if (permintaanId == null || permintaanId <= 0) {
+                return ResponseEntity.badRequest().body("Error: Permintaan ID tidak valid");
+            }
+
+            if (userId == null || userId <= 0) {
+                return ResponseEntity.badRequest().body("Error: User ID tidak valid");
+            }
+
             permintaanService.batalkan(permintaanId, userId);
             return ResponseEntity.ok("Permintaan berhasil dibatalkan.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body("Error: Anda tidak memiliki akses untuk membatalkan permintaan ini");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(409).body("Error: " + e.getMessage());
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.status(404).body("Error: Permintaan tidak ditemukan - " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: Gagal membatalkan permintaan");
         }
     }
 }
