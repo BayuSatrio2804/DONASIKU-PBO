@@ -51,6 +51,9 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // 1. Initialize User & Load Chats
@@ -67,11 +70,19 @@ export default function ChatPage() {
     }
   }, []);
 
-  // 2. Fetch Chat List from API
-  const fetchChatList = async (userId: number) => {
+  // 2. Fetch Chat List from API with Error Handling
+  const fetchChatList = async (userId: number, isRetry = false) => {
     try {
+      if (!isRetry) setIsLoading(true);
+      setError(null);
+
       const res = await fetch(`http://localhost:8080/api/chat/list/${userId}`);
-      if (!res.ok) throw new Error('Failed to fetch chats');
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || `HTTP ${res.status}: Gagal mengambil daftar chat`);
+      }
+
       const data: Chat[] = await res.json();
 
       // Transform API data to UI structure
@@ -83,16 +94,17 @@ export default function ChatPage() {
           chatId: chat.chatId,
           otherUserId: otherUser.userId,
           name: otherUser.username,
-          lastMessage: 'Tap to view chat', // Backend belum kirim last message di list, default dulu
+          lastMessage: 'Tap to view chat',
           time: new Date(chat.startedAt).toLocaleDateString(),
-          avatar: otherUser.role === 'admin' ? '👨‍💻' : '👤', // Simple avatar logic
+          avatar: otherUser.role === 'admin' ? '👨‍💻' : '👤',
           unread: 0
         };
       });
       setChats(transformedChats);
-      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching chats:', error);
+      setError(error instanceof Error ? error.message : 'Gagal memuat daftar chat. Periksa koneksi internet Anda.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -108,14 +120,25 @@ export default function ChatPage() {
   }, [selectedChat]);
 
   const fetchMessages = async (chatId: number) => {
+    setIsLoadingMessages(true);
     try {
       const res = await fetch(`http://localhost:8080/api/chat/${chatId}/history`);
       if (res.ok) {
         const data: ChatMessage[] = await res.json();
         setMessages(data);
+      } else {
+        const errorText = await res.text();
+        console.error('Failed to load messages:', errorText);
+        // Don't show error for empty chat history
+        if (res.status !== 404) {
+          setError('Gagal memuat riwayat pesan');
+        }
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
+      setError('Koneksi terputus. Gagal memuat pesan.');
+    } finally {
+      setIsLoadingMessages(false);
     }
   };
 
@@ -135,27 +158,36 @@ export default function ChatPage() {
   };
 
   const handleSendMessage = async () => {
-    if (!inputText.trim() || !selectedChat || !currentUser) return;
+    if (!inputText.trim() || !selectedChat || !currentUser || isSending) return;
+
+    const messageText = inputText.trim();
+    setInputText(''); // Clear immediately for better UX
+    setIsSending(true);
+    setError(null);
 
     try {
-      // POST /api/chat/send?senderId=...&receiverId=...&message=...
       const params = new URLSearchParams();
       params.append('senderId', currentUser.userId.toString());
       params.append('receiverId', selectedChat.otherUserId.toString());
-      params.append('message', inputText);
+      params.append('message', messageText);
 
       const res = await fetch(`http://localhost:8080/api/chat/send?${params.toString()}`, {
         method: 'POST',
       });
 
       if (res.ok) {
-        setInputText('');
-        fetchMessages(selectedChat.chatId); // Refresh messages immediately
+        fetchMessages(selectedChat.chatId); // Refresh messages
       } else {
-        alert('Gagal mengirim pesan');
+        const errorText = await res.text();
+        setInputText(messageText); // Restore message on error
+        setError(errorText || 'Gagal mengirim pesan. Silakan coba lagi.');
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      setInputText(messageText); // Restore message on error
+      setError('Koneksi terputus. Pesan tidak terkirim.');
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -209,8 +241,8 @@ export default function ChatPage() {
                   )}
                   <div
                     className={`rounded-2xl px-4 py-2 ${isMe
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white border border-gray-200 text-gray-900'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white border border-gray-200 text-gray-900'
                       }`}
                   >
                     <p className="text-sm">{msg.message}</p>
