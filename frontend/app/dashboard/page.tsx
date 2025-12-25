@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Swal from 'sweetalert2';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -130,12 +131,26 @@ export default function DashboardPage() {
 
   const handleClaimDonasi = async (donasiId: number) => {
     if (!user?.userId) return;
+
+    const result = await Swal.fire({
+      title: 'Konfirmasi',
+      text: "Apakah Anda yakin ingin mengambil donasi ini?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Ya',
+      cancelButtonText: 'Tidak'
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       const response = await fetch(`http://localhost:8080/api/donasi/${donasiId}/claim?userId=${user.userId}`, {
         method: 'POST'
       });
       if (response.ok) {
-        alert('Berhasil mengklaim donasi! Menunggu persetujuan donatur.');
+        Swal.fire('Berhasil!', 'Berhasil mengklaim donasi! Menunggu persetujuan donatur.', 'success');
         // Refresh data
         fetchDonasiBersedia();
         if (user.role === 'penerima') {
@@ -144,16 +159,30 @@ export default function DashboardPage() {
         }
       } else {
         const txt = await response.text();
-        alert('Gagal mengklaim: ' + txt);
+        Swal.fire('Gagal!', 'Gagal mengklaim: ' + txt, 'error');
       }
     } catch (err) {
       console.error(err);
-      alert('Gagal menghubungi server');
+      Swal.fire('Error!', 'Gagal menghubungi server', 'error');
     }
   };
 
   const handleApproveDonasi = async (donasiId: number) => {
     if (!user?.userId) return;
+
+    const result = await Swal.fire({
+      title: 'Setujui Donasi?',
+      text: "Apakah Anda yakin ingin menyetujui permintaan ini?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Ya, Setujui',
+      cancelButtonText: 'Batal'
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       const response = await fetch(`http://localhost:8080/api/donasi/${donasiId}/status`, {
         method: 'PATCH',
@@ -161,20 +190,32 @@ export default function DashboardPage() {
         body: JSON.stringify({ statusBaru: 'Dikirim', userId: user.userId })
       });
       if (response.ok) {
-        alert('Donasi disetujui dan sedang dikirim!');
+        Swal.fire('Berhasil!', 'Donasi disetujui dan sedang dikirim!', 'success');
         fetchDonasiPerluDikonfirmasi(user.userId);
         fetchDonasiSaya(user.userId);
       } else {
-        alert('Gagal menyetujui donasi');
+        Swal.fire('Gagal!', 'Gagal menyetujui donasi', 'error');
       }
     } catch (err) {
-      alert('Error action');
+      Swal.fire('Error!', 'Terjadi kesalahan sistem', 'error');
     }
   };
 
   const handleCancelPermintaan = async (permintaanId: number) => {
     if (!user?.userId) return;
-    if (!confirm('Apakah Anda yakin ingin membatalkan permintaan ini?')) return;
+    
+    const result = await Swal.fire({
+      title: 'Batalkan Permintaan?',
+      text: "Apakah Anda yakin ingin membatalkan permintaan ini?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, Batalkan',
+      cancelButtonText: 'Tidak'
+    });
+
+    if (!result.isConfirmed) return;
 
     // Set loading state for this specific request
     const button = document.querySelector(`[data-request-id="${permintaanId}"]`) as HTMLButtonElement;
@@ -208,13 +249,13 @@ export default function DashboardPage() {
 
         // Show user-friendly error based on status code
         if (response.status === 403) {
-          alert('❌ Anda tidak memiliki akses untuk membatalkan permintaan ini');
+          Swal.fire('Akses Ditolak', 'Anda tidak memiliki akses untuk membatalkan permintaan ini', 'error');
         } else if (response.status === 404) {
-          alert('❌ Permintaan tidak ditemukan');
+          Swal.fire('Tidak Ditemukan', 'Permintaan tidak ditemukan', 'error');
         } else if (response.status === 409) {
-          alert('❌ Permintaan tidak dapat dibatalkan (sudah diproses)');
+          Swal.fire('Gagal', 'Permintaan tidak dapat dibatalkan (sudah diproses)', 'warning');
         } else {
-          alert('❌ Gagal membatalkan permintaan: ' + (errorText || 'Kesalahan server'));
+          Swal.fire('Gagal', 'Gagal membatalkan permintaan: ' + (errorText || 'Kesalahan server'), 'error');
         }
       }
     } catch (err) {
@@ -226,7 +267,7 @@ export default function DashboardPage() {
         button.textContent = 'Batalkan';
       }
 
-      alert('❌ Koneksi terputus. Gagal menghubungi server.');
+      Swal.fire('Koneksi Error', 'Koneksi terputus. Gagal menghubungi server.', 'error');
     }
   };
 
@@ -252,6 +293,20 @@ export default function DashboardPage() {
 
   const handleCompleteDonasi = async (donasiId: number) => {
     if (!user?.userId) return;
+
+    const result = await Swal.fire({
+      title: 'Konfirmasi Barang Diterima',
+      text: "Apakah barang sudah benar-benar sampai?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#28a745',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Ya, Sudah Diterima',
+      cancelButtonText: 'Belum'
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       const response = await fetch(`http://localhost:8080/api/donasi/${donasiId}/status`, {
         method: 'PATCH',
@@ -259,13 +314,13 @@ export default function DashboardPage() {
         body: JSON.stringify({ statusBaru: 'Diterima', userId: user.userId })
       });
       if (response.ok) {
-        alert('Donasi berhasil diselesaikan!');
+        Swal.fire('Selesai!', 'Donasi berhasil diselesaikan!', 'success');
         fetchDonasiPenerima(user.userId);
       } else {
-        alert('Gagal update status');
+        Swal.fire('Gagal!', 'Gagal update status', 'error');
       }
     } catch (err) {
-      alert('Error action');
+      Swal.fire('Error!', 'Terjadi kesalahan sistem', 'error');
     }
   };
 
@@ -347,9 +402,7 @@ export default function DashboardPage() {
                           <p className="text-xs text-gray-500 mt-1">Donatur: {item.donatur?.username}</p>
                         </div>
                         {item.statusDonasi?.status === 'Dikirim' && (
-                          <button onClick={() => {
-                            if (confirm("Barang sudah sampai?")) handleCompleteDonasi(item.donasiId);
-                          }} className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm shadow">
+                          <button onClick={() => handleCompleteDonasi(item.donasiId)} className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm shadow">
                             Konfirmasi Diterima
                           </button>
                         )}
@@ -379,7 +432,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-3">
                   {donasiBersedia.slice(0, 3).map((item: any) => (
-                    <Link key={item.donasiId} href={`/detail-donasi/${item.donasiId}`}>
+                    <Link key={item.donasiId} href={`/donasi/${item.donasiId}`}>
                       <div className="group bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/50 transition-all cursor-pointer">
                         <div className="flex items-center gap-4">
                           <div className="w-32 h-32 bg-gray-100 rounded-2xl overflow-hidden flex-shrink-0 shadow-inner">
@@ -410,7 +463,7 @@ export default function DashboardPage() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              if (confirm('Apakah Anda yakin ingin mengambil donasi ini?')) handleClaimDonasi(item.donasiId);
+                              handleClaimDonasi(item.donasiId);
                             }}
                             className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-blue-700 transition-colors"
                           >
@@ -603,9 +656,7 @@ export default function DashboardPage() {
                           <p className="text-sm text-gray-600 mt-2 line-clamp-1">{item.deskripsi}</p>
 
                           <button
-                            onClick={() => {
-                              if (confirm("Setujui permintaan donasi ini?")) handleApproveDonasi(item.donasiId);
-                            }}
+                            onClick={() => handleApproveDonasi(item.donasiId)}
                             className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-red-700 transition"
                           >
                             Setujui
@@ -717,7 +768,7 @@ export default function DashboardPage() {
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-xl text-gray-800">📜 Riwayat Donasi</h3>
-                <Link href="/donasi/history" className="text-primary text-sm font-semibold">Lihat Semua</Link>
+                <Link href="/riwayat" className="text-primary text-sm font-semibold">Lihat Semua</Link>
               </div>
               {donasiSaya.filter((d: any) => d.statusDonasi?.status === 'Diterima' || d.statusDonasi?.status === 'Selesai').length === 0 ? (
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">

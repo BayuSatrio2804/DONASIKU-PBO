@@ -19,7 +19,7 @@ export default function DonasiBarangPage() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const files = e.dataTransfer.files;
-    if (files.length > 0) {
+    if (files.length > 0 && files[0].type.startsWith('image/')) {
       setUploadedFile(files[0]);
     }
   };
@@ -158,7 +158,7 @@ export default function DonasiBarangPage() {
             ref={fileInputRef}
             onChange={handleFileUpload}
             className="hidden"
-            accept=".jpg,.jpeg,.png,.pdf"
+            accept=".jpg,.jpeg,.png"
           />
 
           <div className={`mx-auto mb-4 bg-blue-50 rounded-full flex items-center justify-center overflow-hidden ${uploadedFile && uploadedFile.type.startsWith('image/') ? 'w-48 h-48 rounded-2xl' : 'w-20 h-20'}`}>
@@ -207,7 +207,7 @@ export default function DonasiBarangPage() {
                 Pilih File
               </button>
               <p className="text-sm text-gray-500 mt-2">
-                JPG, PNG, PDF (max 10MB)
+                JPG, PNG (max 10MB)
               </p>
             </>
           )}
@@ -330,4 +330,3 @@ export default function DonasiBarangPage() {
     </main>
   );
 }
-

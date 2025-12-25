@@ -43,6 +43,12 @@ export default function DonasiBersediaPage() {
     }
   };
 
+  const getImageUrl = (path: string) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    return `http://localhost:8080${path.startsWith('/') ? '' : '/'}${path}`;
+  };
+
   const categories = ['semua', 'Pakaian', 'Elektronik', 'Perabotan', 'Lainnya'];
   const filteredDonasi = filter === 'semua' 
     ? donasi 
@@ -117,18 +123,20 @@ export default function DonasiBersediaPage() {
             {/* Donasi Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredDonasi.map((item: any) => (
-                <Link key={item.donasiId} href={`/detail-donasi/${item.donasiId}`}>
+                <Link key={item.id || item.donasiId} href={`/donasi/${item.id || item.donasiId}`}>
                   <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:border-primary/50 transition-all cursor-pointer h-full flex flex-col">
                     {/* Image */}
-                    {item.gambar && (
-                      <div className="w-full h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
+                    <div className="w-full h-48 bg-gray-200 flex items-center justify-center overflow-hidden">
+                      {item.foto || item.imageUrl || item.gambar ? (
                         <img
-                          src={item.gambar}
+                          src={getImageUrl(item.foto || item.imageUrl || item.gambar)}
                           alt={item.namaBarang}
                           className="w-full h-full object-cover"
                         />
-                      </div>
-                    )}
+                      ) : (
+                        <span className="text-4xl">📦</span>
+                      )}
+                    </div>
 
                     {/* Content */}
                     <div className="p-4 flex-1 flex flex-col">
@@ -137,11 +145,11 @@ export default function DonasiBersediaPage() {
                       </h3>
 
                       <p className="text-xs text-gray-500 mb-2">
-                        👤 {item.donatur?.username || 'Donatur'}
+                        👤 {item.donatur?.username || item.namaDonatur || 'Donatur'}
                       </p>
 
                       <p className="text-xs text-gray-500 mb-3">
-                        📍 {item.lokasi?.alamatLengkap || item.lokasi || 'Lokasi'}
+                        📍 {typeof item.lokasi === 'object' ? item.lokasi?.alamatLengkap : item.lokasi || 'Lokasi'}
                       </p>
 
                       <p className="text-sm text-gray-600 mb-4 line-clamp-2 flex-1">
