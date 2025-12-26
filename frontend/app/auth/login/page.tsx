@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState<'donatur' | 'penerima'>('donatur');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -46,20 +47,19 @@ export default function LoginPage() {
       // Data dari backend sekarang: 
       // { success: true, message: "...", username, userId, email, role: "DONATUR"/"PENERIMA" }
 
-<<<<<<< Updated upstream
 =======
       const userRole = data.role ? data.role.toLowerCase() : 'donatur';
 
-      // Validate Role (admin can login from any tab)
-      if (userRole !== 'admin' && userRole !== selectedRole) {
+      // Validate Role
+      if (userRole !== selectedRole) {
         throw new Error('Akun tidak sesuai. Silakan login sebagai ' + (userRole === 'donatur' ? 'Donatur' : 'Penerima'));
       }
 
->>>>>>> Stashed changes
+
       const sessionData = {
         username: data.username,
         userId: data.userId,
-        role: data.role ? data.role.toLowerCase() : 'donatur', // Handle case-sensitivity
+        role: userRole,
         token: 'mock-jwt-token' // Backend belum provide JWT, placeholder aman
       };
 
@@ -108,6 +108,30 @@ export default function LoginPage() {
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
+
+          {/* Role Selection */}
+          <div className="flex p-1 bg-gray-100 rounded-lg mb-8">
+            <button
+              type="button"
+              onClick={() => setSelectedRole('donatur')}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${selectedRole === 'donatur'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Donatur
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedRole('penerima')}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${selectedRole === 'penerima'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
+            >
+              Penerima
+            </button>
+          </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
