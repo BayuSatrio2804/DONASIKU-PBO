@@ -151,7 +151,6 @@ public class UserController {
         }
     }
 
-<<<<<<< Updated upstream
     // FR-XX: Lihat Riwayat Donasi (Class Diagram: lihatRiwayat)
     @GetMapping("/{userId}/riwayat")
     public ResponseEntity<?> getRiwayatDonasi(@PathVariable Integer userId) {
@@ -166,7 +165,9 @@ public class UserController {
             return ResponseEntity.status(404).body("Error: User tidak ditemukan");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: Gagal mengambil riwayat donasi");
-=======
+        }
+    }
+
     // FR-16: Admin - Get Penerima Pending Verification
     @GetMapping("/penerima/pending")
     public ResponseEntity<List<User>> getPendingPenerima() {

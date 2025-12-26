@@ -249,33 +249,12 @@ const Riwayat = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {historyItems.map((item, idx) => (
               <div
-                key={item.id || idx}
+                key={`${item.sourceType}-${item.id}` || idx}
                 className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col"
               >
                 <div className="relative h-48 overflow-hidden bg-gray-100">
                   {/* Temporary fix for known broken legacy items */}
-                  {(item.nama?.toLowerCase().includes('anjing') || item.nama?.toLowerCase().includes('lumba')) && item.image === 'default_fulfillment.png' ? (
-                    <div className="w-full h-full flex items-center justify-center text-6xl text-gray-300 bg-gray-200">
-                      {/* Fallback to category icon if original image is truly lost, but at least avoid the ugly placeholder text if possible, OR user prefer placeholder? 
-                            Actually user said "bukan gambar foto awal".
-                            If I can't find the photo, I can't show it.
-                            But I can at least show a generic icon instead of "Donasi Selesai" placeholder if that looks better?
-                            No, user wants "foto awal". 
-                            I will just let the placeholder show, but I will revert the HIDING I did. 
-                            Wait, I already reverted the hiding in previous step 4443.
-                            The user complained "malah jadi kosong" because of the hiding.
-                            So step 4443 (reverting hiding) is the REAL fix for "kosong".
-                            This current step is unnecessary if I just want to un-hide.
-                            But I can try to be smart.
-                            If I can't find the image, I'll stick to the placeholder for now.
-                        */}
-                      <img
-                        src={getImageUrl(item.image)}
-                        alt={item.nama}
-                        className="w-full h-full object-cover grayscale"
-                      />
-                    </div>
-                  ) : item.image ? (
+                  {item.image ? (
                     <img
                       src={getImageUrl(item.image)}
                       alt={item.nama}
