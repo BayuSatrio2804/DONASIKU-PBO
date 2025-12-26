@@ -306,7 +306,7 @@ const PermintaanSaya = () => {
   const getImageUrl = (img) => {
     if (!img) return null;
     if (img.startsWith('data:') || img.startsWith('http')) return img;
-    return `http://localhost:8080/storage/${img}`;
+    return `http://localhost:8081/storage/${img}`;
   };
 
   // --- LOGIKA TAMPILAN DAFTAR (if (!id)) ---
@@ -466,10 +466,10 @@ const PermintaanSaya = () => {
                               req.donation?.image
                                 ? (req.donation.image.startsWith('data:') || req.donation.image.startsWith('http')
                                   ? req.donation.image
-                                  : `http://localhost:8080/storage/${req.donation.image}`)
+                                  : `http://localhost:8081/storage/${req.donation.image}`)
                                 : (req.image && (req.image.startsWith('data:') || req.image.startsWith('http')
                                   ? req.image
-                                  : `http://localhost:8080/storage/${req.image}`))
+                                  : `http://localhost:8081/storage/${req.image}`))
                             }
                             alt={req.judul}
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
@@ -740,8 +740,8 @@ const PermintaanSaya = () => {
                     : donasi.image.startsWith('http')
                       ? donasi.image
                       : donasi.image.startsWith('storage/')
-                        ? `http://localhost:8080/${donasi.image}`
-                        : `http://localhost:8080/storage/${donasi.image}`
+                        ? `http://localhost:8081/${donasi.image}`
+                        : `http://localhost:8081/storage/${donasi.image}`
                 }
                 alt={donasi.nama}
                 style={{
@@ -894,8 +894,8 @@ const PermintaanSaya = () => {
                       donasi.image.startsWith('data:') || donasi.image.startsWith('http')
                         ? donasi.image
                         : donasi.image.startsWith('storage/')
-                          ? `http://localhost:8080/${donasi.image}`
-                          : `http://localhost:8080/storage/${donasi.image}`
+                          ? `http://localhost:8081/${donasi.image}`
+                          : `http://localhost:8081/storage/${donasi.image}`
                     }
                     alt={donasi.nama}
                     className="w-full h-64 object-cover group-hover:scale-105 transition-transform"

@@ -79,7 +79,7 @@ const VerifikasiPenerima = () => {
     const getPhotoUrl = (photo) => {
         if (!photo) return null;
         if (photo.startsWith('http') || photo.startsWith('data:')) return photo;
-        return `http://localhost:8080/storage/${photo}`;
+        return `http://localhost:8081/storage/${photo}`;
     };
 
     const openDocumentModal = (user) => {

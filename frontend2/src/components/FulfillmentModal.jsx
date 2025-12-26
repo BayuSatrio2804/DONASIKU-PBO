@@ -101,8 +101,8 @@ const FulfillmentModal = ({ request, onClose, onSuccess }) => {
                                             : request.image.startsWith('http')
                                                 ? request.image
                                                 : request.image.startsWith('storage/')
-                                                    ? `http://localhost:8080/${request.image}`
-                                                    : `http://localhost:8080/storage/${request.image}`
+                                                    ? `http://localhost:8081/${request.image}`
+                                                    : `http://localhost:8081/storage/${request.image}`
                                     }
                                     alt="Bukti Kebutuhan"
                                     className="w-full max-h-64 object-contain rounded-lg border-2 border-dashed border-gray-300 bg-white"
@@ -178,8 +178,8 @@ const FulfillmentModal = ({ request, onClose, onSuccess }) => {
                                             request.donation.image.startsWith('http') || request.donation.image.startsWith('data:')
                                                 ? request.donation.image
                                                 : request.donation.image.startsWith('storage/')
-                                                    ? `http://localhost:8080/${request.donation.image}`
-                                                    : `http://localhost:8080/storage/${request.donation.image}`
+                                                    ? `http://localhost:8081/${request.donation.image}`
+                                                    : `http://localhost:8081/storage/${request.donation.image}`
                                         }
                                         alt="Donasi"
                                         className="w-16 h-16 object-cover rounded-lg shadow-sm"

@@ -99,8 +99,8 @@ const DetailPermintaan = () => {
                                     (request.donation?.image || request.image).startsWith('http') || (request.donation?.image || request.image).startsWith('data:')
                                         ? (request.donation?.image || request.image)
                                         : (request.donation?.image || request.image).startsWith('storage/')
-                                            ? `http://localhost:8080/${request.donation?.image || request.image}`
-                                            : `http://localhost:8080/storage/${request.donation?.image || request.image}`
+                                            ? `http://localhost:8081/${request.donation?.image || request.image}`
+                                            : `http://localhost:8081/storage/${request.donation?.image || request.image}`
                                 }
                                 alt={request.judul}
                                 className="w-full h-full object-cover"
@@ -273,8 +273,8 @@ const DetailPermintaan = () => {
                                                             request.image.startsWith('http') || request.image.startsWith('data:')
                                                                 ? request.image
                                                                 : request.image.startsWith('storage/')
-                                                                    ? `http://localhost:8080/${request.image}`
-                                                                    : `http://localhost:8080/storage/${request.image}`
+                                                                    ? `http://localhost:8081/${request.image}`
+                                                                    : `http://localhost:8081/storage/${request.image}`
                                                         }
                                                         alt="Bukti Kebutuhan"
                                                         className="w-full max-h-64 object-contain rounded-md"

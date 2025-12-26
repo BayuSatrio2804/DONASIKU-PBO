@@ -104,7 +104,7 @@ const DaftarDonasi = () => {
               <div className="relative h-48 overflow-hidden bg-gradient-to-br from-blue-100 to-cyan-100">
                 {item.image ? (
                   <img
-                    src={item.image.startsWith('data:') || item.image.startsWith('http') ? item.image : `http://localhost:8080/storage/${item.image}`}
+                    src={item.image.startsWith('data:') || item.image.startsWith('http') ? item.image : `http://localhost:8081/storage/${item.image}`}
                     alt={item.nama}
                     className="w-full h-full object-cover"
                   />

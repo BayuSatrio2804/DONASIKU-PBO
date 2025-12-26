@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 const getPhotoUrl = (photoPath) => {
   if (!photoPath) return null;
   if (photoPath.startsWith('http')) return photoPath;
-  return `http://localhost:8080/${photoPath}`;
+  return `http://localhost:8081/${photoPath}`;
 };
 
 const Navbar = () => {

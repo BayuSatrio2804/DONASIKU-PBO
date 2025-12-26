@@ -59,7 +59,7 @@ const DashboardTopbar = ({ toggleSidebar }) => {
   const getPhotoUrl = (photoPath) => {
     if (!photoPath) return null;
     if (photoPath.startsWith('http') || photoPath.startsWith('data:')) return photoPath;
-    return `http://localhost:8080/storage/${photoPath}`;
+    return `http://localhost:8081/storage/${photoPath}`;
   };
 
   const photoUrl = user ? getPhotoUrl(user.avatar || user.photo) : null;

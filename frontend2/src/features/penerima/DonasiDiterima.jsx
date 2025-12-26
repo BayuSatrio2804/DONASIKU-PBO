@@ -161,7 +161,7 @@ const DonasiDiterima = () => {
                         src={
                           item.image.startsWith('data:')
                             ? item.image
-                            : `http://localhost:8080/${item.image}`
+                            : `http://localhost:8081/${item.image}`
                         }
                         alt={item.nama}
                         className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"

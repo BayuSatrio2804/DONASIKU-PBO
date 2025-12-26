@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiPackage, FiImage, FiMapPin, FiFileText, FiSave } from 'react-icons/fi';
 import { createDonasi } from '../../services/donasiService';
 import { showSuccess, showError } from '../../utils/sweetalert';
+import lokasiService from '../../services/lokasiService';
 
 const FormDonasi = () => {
   const navigate = useNavigate();
@@ -16,6 +17,9 @@ const FormDonasi = () => {
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [daftarLokasi, setDaftarLokasi] = useState([]);
+  const [loadingLokasi, setLoadingLokasi] = useState(true);
+  const [showNewLocasi, setShowNewLocasi] = useState(false);
 
   const categories = [
     { value: 'pakaian', label: 'Pakaian', icon: '👕' },
@@ -25,6 +29,23 @@ const FormDonasi = () => {
     { value: 'perabotan', label: 'Perabotan', icon: '🛋️' },
     { value: 'lainnya', label: 'Lainnya', icon: '📦' }
   ];
+
+  // Load lokasi saat component mount
+  useEffect(() => {
+    loadDaftarLokasi();
+  }, []);
+
+  const loadDaftarLokasi = async () => {
+    setLoadingLokasi(true);
+    try {
+      const data = await lokasiService.getAllLokasi();
+      setDaftarLokasi(data);
+    } catch (error) {
+      console.error('Error loading lokasi list:', error);
+    } finally {
+      setLoadingLokasi(false);
+    }
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -169,14 +190,52 @@ const FormDonasi = () => {
                 <FiMapPin className="text-[#007EFF]" />
                 <span>Lokasi Barang *</span>
               </label>
-              <input
-                type="text"
-                required
-                value={formData.lokasi}
-                onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
-                placeholder="Contoh: Jl. Gatot Subroto No. 123, Bandung"
-                className="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:border-[#007EFF] focus:ring-4 focus:ring-[#007EFF]/10 transition-all"
-              />
+              {!showNewLocasi ? (
+                <div className="space-y-3">
+                  <select
+                    value={formData.lokasi}
+                    onChange={(e) => {
+                      setFormData({ ...formData, lokasi: e.target.value });
+                      if (e.target.value === '__new__') {
+                        setShowNewLocasi(true);
+                        setFormData({ ...formData, lokasi: '' });
+                      }
+                    }}
+                    disabled={loadingLokasi}
+                    className="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:border-[#007EFF] focus:ring-4 focus:ring-[#007EFF]/10 transition-all disabled:bg-gray-100"
+                  >
+                    <option value="">
+                      {loadingLokasi ? 'Memuat lokasi...' : 'Pilih Lokasi'}
+                    </option>
+                    {daftarLokasi.map((lok) => (
+                      <option key={lok.lokasiId} value={lok.alamatLengkap}>
+                        {lok.alamatLengkap}
+                      </option>
+                    ))}
+                    <option value="__new__">+ Tambah Lokasi Baru</option>
+                  </select>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={formData.lokasi}
+                    onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
+                    placeholder="Contoh: Jl. Gatot Subroto No. 123, Bandung"
+                    className="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:border-[#007EFF] focus:ring-4 focus:ring-[#007EFF]/10 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNewLocasi(false);
+                      setFormData({ ...formData, lokasi: '' });
+                    }}
+                    className="text-sm text-[#007EFF] hover:underline font-semibold"
+                  >
+                    ← Kembali ke Pilihan Lokasi
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="md:col-span-2">
