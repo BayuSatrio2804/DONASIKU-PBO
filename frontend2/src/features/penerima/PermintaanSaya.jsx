@@ -11,13 +11,17 @@ import {
   FiCheckCircle,
   FiLoader,
   FiMessageSquare,
-  FiSearch,
   FiAlertCircle,
-  FiMapPin
+  FiMapPin,
+  FiEdit,
+  FiTrash2,
+  FiX,
+  FiSearch
 } from "react-icons/fi";
+import Swal from 'sweetalert2';
 // FIX LINTER: Hanya import yang diperlukan
 import { getDonasiByIdService } from "../../services/donasiService.js";
-import { getMyPermintaanSaya } from "../../services/permintaanService.js";
+import { getMyPermintaanSaya, updatePermintaan, deletePermintaan } from "../../services/permintaanService.js";
 import { getAuthData } from "../../utils/localStorage.js";
 import API from "../../services/api.js";
 import { showSuccess, showError } from "../../utils/sweetalert";
@@ -37,10 +41,97 @@ const PermintaanSaya = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
-  // Debug modal state
   useEffect(() => {
     console.log("Modal state changed:", showImageModal);
   }, [showImageModal]);
+
+  // Edit State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState({ id: null, jumlah: 0, deskripsi: '', judul: '', image: null });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editImagePreview, setEditImagePreview] = useState(null);
+
+  const handleEditClick = (req) => {
+    setEditData({
+      id: req.id,
+      jumlah: req.target_jumlah || req.jumlah,
+      deskripsi: req.deskripsi || req.deskripsiKebutuhan,
+      judul: req.judul || req.jenisBarang || '',
+      image: null
+    });
+    setEditImagePreview(getImageUrl(req.image));
+    setIsEditing(true);
+  };
+
+  const handleDeleteClick = async (reqId) => {
+    const confirm = await Swal.fire({
+      title: 'Hapus Permintaan?',
+      text: "Permintaan ini akan dihapus permanen.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, Hapus!'
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        setActionLoading(true);
+        if (!user?.id) throw new Error("User ID missing");
+        await deletePermintaan(reqId, user.id);
+        await showSuccess("Terhapus", "Permintaan berhasil dihapus.");
+
+        // Refresh
+        const data = await getMyPermintaanSaya();
+        if (Array.isArray(data)) {
+          const activeData = data.filter(item =>
+            item.status_permohonan !== 'received' &&
+            item.status_permohonan !== 'rejected' &&
+            item.status !== 'terpenuhi'
+          );
+          setPermintaan(activeData);
+        }
+      } catch (err) {
+        showError("Gagal", err.message);
+      } finally {
+        setActionLoading(false);
+      }
+    }
+  };
+
+  const handleUpdateSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setEditLoading(true);
+      if (!user?.id) throw new Error("User not logged in");
+
+      await updatePermintaan(
+        editData.id,
+        user.id,
+        editData.jumlah,
+        editData.deskripsi,
+        editData.judul,
+        editData.image
+      );
+      await showSuccess("Berhasil", "Permintaan berhasil diupdate!");
+      setIsEditing(false);
+
+      // Refresh list
+      const data = await getMyPermintaanSaya();
+      if (Array.isArray(data)) {
+        const activeData = data.filter(item =>
+          item.status_permohonan !== 'received' &&
+          item.status_permohonan !== 'rejected' &&
+          item.status !== 'terpenuhi'
+        );
+        setPermintaan(activeData);
+      }
+    } catch (err) {
+      showError("Gagal Update", err.message);
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   const user = getAuthData();
 
@@ -222,6 +313,98 @@ const PermintaanSaya = () => {
   if (!id) {
     return (
       <div className="min-h-screen font-sans bg-gray-50">
+        {/* EDIT MODAL */}
+        {isEditing && (
+          <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="bg-gray-50 border-b px-6 py-4 flex justify-between items-center">
+                <h3 className="font-bold text-lg text-gray-800">Edit Permintaan</h3>
+                <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-gray-600">
+                  <FiX size={24} />
+                </button>
+              </div>
+              <form onSubmit={handleUpdateSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Nama Barang</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"
+                    value={editData.judul}
+                    onChange={e => setEditData({ ...editData, judul: e.target.value })}
+                    placeholder="Contoh: Selimut Tebal"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Jumlah Kebutuhan</label>
+                  <input
+                    type="number"
+                    className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={editData.jumlah}
+                    onChange={e => setEditData({ ...editData, jumlah: e.target.value })}
+                    min="1"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Deskripsi / Catatan</label>
+                  <textarea
+                    className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"
+                    value={editData.deskripsi}
+                    onChange={e => setEditData({ ...editData, deskripsi: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Update Gambar (Opsional)</label>
+                  <label className="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                    {editImagePreview ? (
+                      <img src={editImagePreview} className="h-full object-contain" alt="Preview" />
+                    ) : (
+                      <div className="text-center text-gray-400">
+                        <FiImage className="mx-auto text-2xl mb-1" />
+                        <span className="text-xs">Klik untuk ganti gambar</span>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const f = e.target.files[0];
+                        if (f) {
+                          setEditData({ ...editData, image: f });
+                          const reader = new FileReader();
+                          reader.onload = () => setEditImagePreview(reader.result);
+                          reader.readAsDataURL(f);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div className="pt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editLoading}
+                    className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex justify-center items-center"
+                  >
+                    {editLoading ? <FiLoader className="animate-spin" /> : "Simpan Perubahan"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
         {/* HEADER SECTION */}
         <div className="bg-gradient-to-br from-[#00306C] via-[#0063FF] to-[#007EFF] text-white">
           <div className="max-w-7xl mx-auto px-6 md:px-8 py-12">
@@ -312,7 +495,9 @@ const PermintaanSaya = () => {
                                   ? 'bg-purple-100 text-purple-800'
                                   : req.status_permohonan === 'received'
                                     ? 'bg-green-100 text-green-800'
-                                    : 'bg-red-100 text-red-800'
+                                    : req.status_permohonan === 'Cancelled'
+                                      ? 'bg-gray-100 text-gray-800'
+                                      : 'bg-red-100 text-red-800'
                               }`}
                           >
                             {req.status_permohonan === 'pending' || !req.status_permohonan
@@ -323,7 +508,9 @@ const PermintaanSaya = () => {
                                   ? <><FiPackage /> Dikirim</>
                                   : req.status_permohonan === 'received'
                                     ? <><FiCheckCircle /> Diterima</>
-                                    : <><FiAlertCircle /> Ditolak</>}
+                                    : req.status_permohonan === 'Cancelled'
+                                      ? <><FiX /> Dibatalkan</>
+                                      : <><FiAlertCircle /> Ditolak</>}
                           </span>
                         </div>
                       </div>
@@ -348,7 +535,7 @@ const PermintaanSaya = () => {
                           </div>
                           <div className="flex items-center space-x-2 text-sm text-gray-600">
                             <FiPackage className="text-[#007EFF]" />
-                            <span>Permintaan: <span className="font-semibold">{req.target_jumlah} Pcs</span></span>
+                            <span>Permintaan: <span className="font-semibold">{req.jumlah || req.target_jumlah} Pcs</span></span>
                           </div>
                         </div>
 
@@ -382,6 +569,31 @@ const PermintaanSaya = () => {
                               )}
                             </div>
                           )}
+
+                        {/* CRUD Buttons for Pending Requests */}
+                        {(req.status_permohonan === 'pending' || !req.status_permohonan) && (
+                          <div className="pt-4 border-t border-gray-100 flex gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log("✏️ Edit clicked for request:", req.id);
+                                handleEditClick(req);
+                              }}
+                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-yellow-50 text-yellow-700 font-bold rounded-xl hover:bg-yellow-100 transition-colors cursor-pointer z-10 relative"
+                            >
+                              <FiEdit /> Edit
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(req.id);
+                              }}
+                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-700 font-bold rounded-xl hover:bg-red-100 transition-colors cursor-pointer z-10 relative"
+                            >
+                              <FiTrash2 /> Hapus
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -397,6 +609,99 @@ const PermintaanSaya = () => {
   // --- LOGIKA FORM PENGAJUAN ---
   return (
     <div className="max-w-2xl mx-auto">
+      {/* EDIT MODAL */}
+      {isEditing && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-gray-50 border-b px-6 py-4 flex justify-between items-center">
+              <h3 className="font-bold text-lg text-gray-800">Edit Permintaan</h3>
+              <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-gray-600">
+                <FiX size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Nama Barang</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"
+                  value={editData.judul}
+                  onChange={e => setEditData({ ...editData, judul: e.target.value })}
+                  placeholder="Contoh: Selimut Tebal"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Jumlah Kebutuhan</label>
+                <input
+                  type="number"
+                  className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={editData.jumlah}
+                  onChange={e => setEditData({ ...editData, jumlah: e.target.value })}
+                  min="1"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Deskripsi / Catatan</label>
+                <textarea
+                  className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"
+                  value={editData.deskripsi}
+                  onChange={e => setEditData({ ...editData, deskripsi: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Update Gambar (Opsional)</label>
+                <label className="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                  {editImagePreview ? (
+                    <img src={editImagePreview} className="h-full object-contain" alt="Preview" />
+                  ) : (
+                    <div className="text-center text-gray-400">
+                      <FiImage className="mx-auto text-2xl mb-1" />
+                      <span className="text-xs">Klik untuk ganti gambar</span>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const f = e.target.files[0];
+                      if (f) {
+                        setEditData({ ...editData, image: f });
+                        const reader = new FileReader();
+                        reader.onload = () => setEditImagePreview(reader.result);
+                        reader.readAsDataURL(f);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors flex justify-center items-center"
+                >
+                  {editLoading ? <FiLoader className="animate-spin" /> : "Simpan Perubahan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* IMAGE ZOOM MODAL */}
       {showImageModal && donasi?.image && (
         <div

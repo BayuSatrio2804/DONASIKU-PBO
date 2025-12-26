@@ -202,7 +202,7 @@ const PermintaanMasukDonatur = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <FiPackage className="text-green-500" />
-                      <span>Jumlah: {p.jumlah || p.target_jumlah}</span>
+                      <span>Jumlah: {p.jumlah || p.target_jumlah} Pcs</span>
                     </div>
                   </div>
                 </div>

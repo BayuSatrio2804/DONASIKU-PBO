@@ -136,22 +136,81 @@ public class PermintaanService {
     }
 
     @Transactional
-    public PermintaanDonasi fulfillPermintaan(Integer permintaanId, Integer donaturId) {
+    public PermintaanDonasi fulfillPermintaan(Integer permintaanId, Integer donaturId, Integer jumlahDonasi,
+            org.springframework.web.multipart.MultipartFile file) {
         PermintaanDonasi permintaan = permintaanRepository.findById(permintaanId)
                 .orElseThrow(() -> new RuntimeException("Permintaan tidak ditemukan"));
 
         User donatur = userRepository.findById(donaturId)
                 .orElseThrow(() -> new RuntimeException("Donatur tidak ditemukan"));
 
-        // Accept both 'Open' and 'pending' statuses (pending is the new default)
+        // Accept both 'Open' and 'pending' statuses
         String currentStatus = permintaan.getStatus();
         if (!"Open".equalsIgnoreCase(currentStatus) && !"pending".equalsIgnoreCase(currentStatus)) {
             throw new RuntimeException("Permintaan tidak dalam status Open/Pending. Status saat ini: " + currentStatus);
         }
 
-        permintaan.setDonatur(donatur);
-        permintaan.setStatus("approved"); // Changed from 'Diproses' to match frontend expectations
-        return permintaanRepository.save(permintaan);
+        if (jumlahDonasi <= 0) {
+            throw new RuntimeException("Jumlah donasi harus lebih dari 0");
+        }
+
+        if (jumlahDonasi > permintaan.getJumlah()) {
+            throw new RuntimeException("Jumlah donasi melebihi kebutuhan permintaan (" + permintaan.getJumlah() + ")");
+        }
+
+        // Handle File Upload for Proof
+        String fileName = null;
+        if (file != null && !file.isEmpty()) {
+            try {
+                fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+                java.nio.file.Path uploadPath = java.nio.file.Paths.get("uploads");
+                if (!java.nio.file.Files.exists(uploadPath)) {
+                    java.nio.file.Files.createDirectories(uploadPath);
+                }
+                java.nio.file.Files.copy(file.getInputStream(), uploadPath.resolve(fileName));
+            } catch (java.io.IOException e) {
+                throw new RuntimeException("Gagal menyimpan foto bukti: " + e.getMessage());
+            }
+        }
+
+        // Logic: Partial vs Full
+        if (jumlahDonasi < permintaan.getJumlah()) {
+            // PARTIAL FULFILLMENT -> SPLIT Request
+            // 1. Create New "Processed" Request
+            PermintaanDonasi processedRequest = new PermintaanDonasi();
+            processedRequest.setPenerima(permintaan.getPenerima());
+            processedRequest.setJenisBarang(permintaan.getJenisBarang());
+            processedRequest.setKategori(permintaan.getKategori());
+            processedRequest.setDeskripsiKebutuhan(permintaan.getDeskripsiKebutuhan() + " (Dipenuhi Sebagian)");
+            processedRequest.setLokasi(permintaan.getLokasi());
+            processedRequest.setCreatedAt(permintaan.getCreatedAt()); // Keep original date? or now? Let's keep original
+                                                                      // context.
+            processedRequest.setUpdatedAt(LocalDateTime.now());
+
+            // Set specific data for the fulfilled part
+            processedRequest.setJumlah(jumlahDonasi);
+            processedRequest.setDonatur(donatur);
+            processedRequest.setStatus("approved"); // Langsung diproses
+            if (fileName != null)
+                processedRequest.setImage(fileName);
+
+            permintaanRepository.save(processedRequest);
+
+            // 2. Update Original Request (Remain Open)
+            permintaan.setJumlah(permintaan.getJumlah() - jumlahDonasi);
+            permintaan.setUpdatedAt(LocalDateTime.now());
+            permintaanRepository.save(permintaan);
+
+            return processedRequest; // Return the one that is being processed so donor sees success
+        } else {
+            // FULL FULFILLMENT
+            permintaan.setDonatur(donatur);
+            permintaan.setStatus("approved");
+            if (fileName != null)
+                permintaan.setImage(fileName);
+            permintaan.setUpdatedAt(LocalDateTime.now());
+            return permintaanRepository.save(permintaan);
+        }
     }
 
     @Transactional
@@ -218,6 +277,52 @@ public class PermintaanService {
 
         Donasi savedDonasi = donasiRepository.save(donasi);
         permintaan.setDonasi(savedDonasi);
+
+        return permintaanRepository.save(permintaan);
+    }
+
+    @Transactional
+    public PermintaanDonasi editPermintaan(Integer permintaanId, PermintaanDonasi updatedData, Integer userId,
+            org.springframework.web.multipart.MultipartFile file) {
+        PermintaanDonasi permintaan = permintaanRepository.findById(permintaanId)
+                .orElseThrow(() -> new RuntimeException("Permintaan tidak ditemukan"));
+
+        if (!permintaan.getPenerima().getUserId().equals(userId)) {
+            throw new RuntimeException("Anda tidak berhak mengedit permintaan ini.");
+        }
+
+        // Only allow edits if status is pending or Open
+        if (!"pending".equalsIgnoreCase(permintaan.getStatus()) && !"Open".equalsIgnoreCase(permintaan.getStatus())) {
+            throw new RuntimeException("Permintaan tidak dapat diedit karena status sudah: " + permintaan.getStatus());
+        }
+
+        permintaan.setJumlah(updatedData.getJumlah());
+        permintaan.setDeskripsiKebutuhan(updatedData.getDeskripsiKebutuhan());
+
+        // Update Nama Barang (Jenis Barang)
+        if (updatedData.getJenisBarang() != null && !updatedData.getJenisBarang().isBlank()) {
+            permintaan.setJenisBarang(updatedData.getJenisBarang());
+        }
+
+        // Handle File Update
+        if (file != null && !file.isEmpty()) {
+            try {
+                String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+                java.nio.file.Path uploadPath = java.nio.file.Paths.get("uploads");
+                if (!java.nio.file.Files.exists(uploadPath)) {
+                    java.nio.file.Files.createDirectories(uploadPath);
+                }
+                java.nio.file.Files.copy(file.getInputStream(), uploadPath.resolve(fileName));
+
+                // Delete old image if exists? (Optional, maybe skip for now to avoid deleting
+                // default assets)
+                permintaan.setImage(fileName);
+            } catch (java.io.IOException e) {
+                throw new RuntimeException("Gagal mengupdate file bukti: " + e.getMessage());
+            }
+        }
+
+        permintaan.setUpdatedAt(LocalDateTime.now());
 
         return permintaanRepository.save(permintaan);
     }

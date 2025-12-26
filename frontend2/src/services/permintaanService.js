@@ -104,12 +104,46 @@ export const getPermintaanById = async (id) => {
 // Fungsi FULFILL - Donatur memenuhi permintaan
 export const fulfillPermintaan = async (id, donationData) => {
     try {
-        // Backend expects donaturId as param, not body? 
-        // Checking PermintaanController: fulfill(@PathVariable id, @RequestParam donaturId)
-        // Adjusting usage:
         const user = getCurrentUser();
         const donaturId = user?.userId || user?.id;
-        const response = await API.post(`/permintaan/${id}/fulfill?donaturId=${donaturId}`);
+
+        const formData = new FormData();
+        formData.append('donaturId', donaturId);
+        formData.append('jumlah', donationData.jumlah);
+
+        // Handle Image: If it's a File object (new upload), append it. 
+        // If it's base64 string (from FileReader in Modal), convert to Blob or handle in backend?
+        // Backend expects MultipartFile 'file'.
+        // Modal logic (FulfillmentModal.jsx): `setFormData({ ...formData, image: reader.result });` -> this is base64 string.
+        // We need to convert Base64 to File object here or update Modal to store File.
+
+        // Better approach: Modal stores File object in a separate state or formData.
+        // Checking FulfillmentModal.jsx again...
+        // Line 30: `setFormData({ ...formData, image: reader.result });` -> Stores base64 for preview AND payload.
+        // Line 25: `const file = e.target.files[0];` -> The file object exists in the event.
+
+        // Quick Fix: Update Modal to keep the File object? 
+        // OR: Since I can't easily change Modal state logic without breaking preview,
+        // let's assume the Modal passes the File object OR we convert base64.
+
+        // Wait, looking at FulfillmentModal.jsx:
+        // It calls `fulfillPermintaan(request.id, formData)`.
+        // The `formData` in Modal has `image` as Base64 string.
+        // This is problematic for MultipartFile backend.
+
+        // I should update FulfillmentModal.jsx to store the RAW FILE too.
+        // But for now, let's update this service to handle what it receives while I fix Modal in next step.
+        // Actually, let's update the Service to assume `donationData.file` exists, which I'll add to Modal.
+
+        if (donationData.file) {
+            formData.append('file', donationData.file);
+        } else if (donationData.image && typeof donationData.image !== 'string') {
+            formData.append('file', donationData.image);
+        }
+
+        const response = await API.post(`/permintaan/${id}/fulfill`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
         return response.data;
     } catch (error) {
         console.error('Error fulfilling permintaan:', error);
@@ -165,5 +199,36 @@ export const markPermintaanReceived = async (id) => {
     } catch (error) {
         console.error('Error marking permintaan as received:', error);
         throw new Error(error.response?.data?.message || 'Gagal mengonfirmasi penerimaan barang.');
+    }
+};
+
+// CRUD: Update Permintaan
+export const updatePermintaan = async (id, userId, jumlah, deskripsi, judul, file) => {
+    try {
+        const formData = new FormData();
+        formData.append('userId', userId);
+        formData.append('jumlah', jumlah);
+        formData.append('deskripsi', deskripsi);
+        if (judul) formData.append('judul', judul);
+        if (file) formData.append('file', file);
+
+        const response = await API.post(`/permintaan/${id}/update`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating permintaan:', error);
+        throw new Error(error.response?.data?.message || 'Gagal mengupdate permintaan.');
+    }
+};
+
+// CRUD: Delete Permintaan (Cancel)
+export const deletePermintaan = async (id, userId) => {
+    try {
+        const response = await API.post(`/permintaan/${id}/cancel?userId=${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting permintaan:', error);
+        throw new Error(error.response?.data?.message || 'Gagal menghapus permintaan.');
     }
 };

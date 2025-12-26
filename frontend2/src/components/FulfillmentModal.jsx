@@ -27,7 +27,7 @@ const FulfillmentModal = ({ request, onClose, onSuccess }) => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPreview(reader.result);
-                setFormData({ ...formData, image: reader.result });
+                setFormData({ ...formData, image: reader.result, file: file }); // Store Raw File
             };
             reader.readAsDataURL(file);
         }
@@ -112,95 +112,66 @@ const FulfillmentModal = ({ request, onClose, onSuccess }) => {
                         )}
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Hidden Fields for Auto-fill */}
+                        <input type="hidden" name="nama" value={formData.nama} />
+                        <input type="hidden" name="kategori" value={formData.kategori} />
+                        <input type="hidden" name="lokasi" value={formData.lokasi} />
+
+                        {/* Quantity Field - Kept for partial fulfillment flexibility */}
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Nama Barang Donasi</label>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Jumlah yang Didonasikan</label>
                             <input
-                                type="text"
-                                name="nama"
-                                value={formData.nama}
+                                type="number"
+                                name="jumlah"
+                                value={formData.jumlah}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#00306C] outline-none"
+                                min="1"
+                                max={request.target_jumlah}
+                                className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#00306C] outline-none text-lg font-bold text-center"
                                 required
                             />
+                            <p className="text-xs text-center text-gray-500 mt-1">
+                                Target permintaan: {request.target_jumlah} Pcs
+                            </p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Jumlah</label>
-                                <input
-                                    type="number"
-                                    name="jumlah"
-                                    value={formData.jumlah}
-                                    onChange={handleChange}
-                                    min="1"
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#00306C] outline-none"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Kategori</label>
-                                <input
-                                    type="text"
-                                    name="kategori"
-                                    value={formData.kategori}
-                                    disabled
-                                    className="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-500"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Lokasi Barang Anda</label>
-                            <input
-                                type="text"
-                                name="lokasi"
-                                value={formData.lokasi}
-                                onChange={handleChange}
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#00306C] outline-none"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Deskripsi & Kondisi</label>
-                            <textarea
-                                name="deskripsi"
-                                value={formData.deskripsi}
-                                onChange={handleChange}
-                                rows="3"
-                                placeholder="Jelaskan kondisi barang donasi Anda..."
-                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#00306C] outline-none resize-none"
-                                required
-                            ></textarea>
-                        </div>
-
-                        {/* Image Upload Section - Hidden/Modified if donation exists */}
+                        {/* Image Upload Section - Main Focus */}
                         {!request.donation && (
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Foto Barang</label>
-                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 relative">
+                                <label className="block text-sm font-bold text-gray-700 mb-2 text-center">
+                                    Upload Foto Barang (Wajib)
+                                </label>
+                                <div className="border-2 border-dashed border-[#00306C]/30 rounded-xl p-6 text-center cursor-pointer hover:bg-blue-50 transition-colors relative group">
                                     <input
                                         type="file"
                                         accept="image/*"
                                         onChange={handleImageChange}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                     />
                                     {preview ? (
-                                        <img src={preview} alt="Preview" className="h-32 mx-auto object-contain rounded" />
+                                        <div className="relative">
+                                            <img src={preview} alt="Preview" className="h-48 mx-auto object-contain rounded-lg shadow-sm" />
+                                            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg text-white font-bold text-sm">
+                                                Ganti Foto
+                                            </div>
+                                        </div>
                                     ) : (
-                                        <div className="text-gray-500">
-                                            <FiUpload className="mx-auto text-xl mb-1" />
-                                            <span className="text-xs">Upload Foto</span>
+                                        <div className="py-4">
+                                            <div className="w-16 h-16 bg-blue-100 text-[#00306C] rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                                                <FiUpload className="text-3xl" />
+                                            </div>
+                                            <p className="font-bold text-gray-700">Klik untuk Upload Foto</p>
+                                            <p className="text-xs text-gray-500 mt-1">Format: JPG, PNG, JPEG</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         )}
 
-                        {/* If donation exists, show info instead of upload */}
+                        {/* If donation exists (rare case in fulfill flow but good to handle) */}
                         {request.donation && (
-                            <div className="bg-green-50 p-4 rounded-lg flex items-center gap-3 border border-green-200">
+                            <div className="bg-green-50 p-4 rounded-xl flex items-center gap-3 border border-green-200">
                                 {request.donation.image && (
                                     <img
                                         src={
@@ -211,23 +182,28 @@ const FulfillmentModal = ({ request, onClose, onSuccess }) => {
                                                     : `http://localhost:8080/storage/${request.donation.image}`
                                         }
                                         alt="Donasi"
-                                        className="w-16 h-16 object-cover rounded shadow-sm"
+                                        className="w-16 h-16 object-cover rounded-lg shadow-sm"
                                     />
                                 )}
                                 <div>
                                     <p className="font-bold text-green-800 text-sm">Menggunakan Foto dari Donasi</p>
-                                    <p className="text-xs text-green-600">Foto barang sudah tersedia dari data donasi Anda.</p>
+                                    <p className="text-xs text-green-600">Foto barang diambil otomatis dari data donasi Anda.</p>
                                 </div>
                             </div>
                         )}
 
-                        <div className="pt-4">
+                        <div className="pt-2">
                             <button
                                 type="submit"
-                                disabled={loading}
-                                className="w-full bg-[#00306C] text-white font-bold py-3 rounded-xl hover:bg-[#001F4D] transition-colors disabled:opacity-70"
+                                disabled={loading || (!preview && !request.donation)}
+                                className="w-full bg-gradient-to-r from-[#00306C] to-[#0063FF] text-white font-bold py-4 rounded-xl hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-70 disabled:scale-100 disabled:shadow-none"
                             >
-                                {loading ? 'Memproses...' : 'Kirim Donasi'}
+                                {loading ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        Memproses...
+                                    </span>
+                                ) : 'Kirim Barang Sekarang 🚀'}
                             </button>
                         </div>
                     </form>
