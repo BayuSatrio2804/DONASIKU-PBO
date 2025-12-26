@@ -14,4 +14,6 @@ public class AuthResponse {
     private Integer userId;
     private String email;
     private String role;
+    private String nama; // User's display name
+    private String fotoProfil; // Profile photo filename
 }

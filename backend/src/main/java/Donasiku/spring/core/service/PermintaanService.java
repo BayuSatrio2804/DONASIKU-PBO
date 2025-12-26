@@ -27,7 +27,27 @@ public class PermintaanService {
     // --- FR-07: Penerima Membuat Permintaan (Support utk FR-08) ---
     @Transactional
     public PermintaanDonasi createPermintaan(PermintaanDonasi request) {
-        // ... (existing code, not modifying this part, just context)
+        return createPermintaanWithFile(request, null, null);
+    }
+
+    @Transactional
+    public PermintaanDonasi createPermintaanWithFile(PermintaanDonasi request,
+            org.springframework.web.multipart.MultipartFile file, Integer donationId) {
+        // Handle File upload if present
+        if (file != null && !file.isEmpty()) {
+            try {
+                String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+                java.nio.file.Path uploadPath = java.nio.file.Paths.get("uploads");
+                if (!java.nio.file.Files.exists(uploadPath)) {
+                    java.nio.file.Files.createDirectories(uploadPath);
+                }
+                java.nio.file.Files.copy(file.getInputStream(), uploadPath.resolve(fileName));
+                request.setImage(fileName);
+            } catch (java.io.IOException e) {
+                throw new RuntimeException("Gagal menyimpan file bukti: " + e.getMessage());
+            }
+        }
+
         // Pastikan User ada
         User penerima = userRepository.findById(request.getPenerima().getUserId())
                 .orElseThrow(() -> new RuntimeException("User penerima tidak ditemukan"));
@@ -56,8 +76,20 @@ public class PermintaanService {
 
         request.setPenerima(penerima);
         request.setLokasi(lokasi);
-        request.setStatus(request.getStatus() == null ? "Open" : request.getStatus());
+        request.setStatus(request.getStatus() == null ? "pending" : request.getStatus());
         request.setCreatedAt(LocalDateTime.now());
+
+        // Handle Donation Link and Target Donor (FR-08 improvement)
+        if (donationId != null) {
+            Donasi donasi = donasiRepository.findById(donationId)
+                    .orElseThrow(() -> new RuntimeException("Donasi tidak ditemukan"));
+            request.setDonasi(donasi);
+            // If the donation has a donor, set that donor as the target for this request
+            if (donasi.getDonatur() != null) {
+                request.setDonatur(donasi.getDonatur());
+            }
+        }
+
         return permintaanRepository.save(request);
     }
 
@@ -111,12 +143,27 @@ public class PermintaanService {
         User donatur = userRepository.findById(donaturId)
                 .orElseThrow(() -> new RuntimeException("Donatur tidak ditemukan"));
 
-        if (!"Open".equalsIgnoreCase(permintaan.getStatus())) {
-            throw new RuntimeException("Permintaan tidak dalam status Open.");
+        // Accept both 'Open' and 'pending' statuses (pending is the new default)
+        String currentStatus = permintaan.getStatus();
+        if (!"Open".equalsIgnoreCase(currentStatus) && !"pending".equalsIgnoreCase(currentStatus)) {
+            throw new RuntimeException("Permintaan tidak dalam status Open/Pending. Status saat ini: " + currentStatus);
         }
 
         permintaan.setDonatur(donatur);
-        permintaan.setStatus("Diproses"); // Menunggu Konfirmasi Penerima (Sesuai keinginan user)
+        permintaan.setStatus("approved"); // Changed from 'Diproses' to match frontend expectations
+        return permintaanRepository.save(permintaan);
+    }
+
+    @Transactional
+    public PermintaanDonasi markAsSent(Integer permintaanId) {
+        PermintaanDonasi permintaan = permintaanRepository.findById(permintaanId)
+                .orElseThrow(() -> new RuntimeException("Permintaan tidak ditemukan"));
+
+        if (!"approved".equalsIgnoreCase(permintaan.getStatus())) {
+            throw new RuntimeException("Permintaan harus dalam status approved untuk dikirim.");
+        }
+
+        permintaan.setStatus("sent");
         return permintaanRepository.save(permintaan);
     }
 
@@ -125,37 +172,53 @@ public class PermintaanService {
         PermintaanDonasi permintaan = permintaanRepository.findById(permintaanId)
                 .orElseThrow(() -> new RuntimeException("Permintaan tidak ditemukan"));
 
-        // Izinkan Diproses atau Offered agar data lama tetap bisa ditransisi
-        if (!"Diproses".equalsIgnoreCase(permintaan.getStatus())
-                && !"Offered".equalsIgnoreCase(permintaan.getStatus())) {
-            throw new RuntimeException("Permintaan belum ditawarkan bantuan oleh donatur.");
+        if (!"sent".equalsIgnoreCase(permintaan.getStatus())) {
+            throw new RuntimeException("Permintaan harus dalam status 'sent' untuk dikonfirmasi diterima.");
         }
 
-        // 1. Update Permintaan -> Fulfilled
-        permintaan.setStatus("Fulfilled");
+        // 1. Update Permintaan -> received
+        permintaan.setStatus("received");
 
-        // 2. Create Donasi (Status: Dikirim)
-        Donasi donasi = new Donasi();
-        donasi.setDonatur(permintaan.getDonatur()); // Donatur sudah diset di tahap offered
+        Donasi donasi;
+        if (permintaan.getDonasi() != null) {
+            // Use existing donation
+            donasi = permintaan.getDonasi();
+            donasi.setUpdatedAt(LocalDateTime.now());
+            // donasi.setFoto() -> Keep existing photo!!
+        } else {
+            // 2. Create New Donasi (Fallback for new fulfillments)
+            donasi = new Donasi();
+            donasi.setDonatur(permintaan.getDonatur());
+            donasi.setKategori(permintaan.getJenisBarang());
+            donasi.setDeskripsi("PERMINTAAN SELESAI: " + permintaan.getDeskripsiKebutuhan());
+            donasi.setJumlah(permintaan.getJumlah());
+            donasi.setLokasi(permintaan.getLokasi());
+            donasi.setCreatedAt(LocalDateTime.now());
+            donasi.setUpdatedAt(LocalDateTime.now());
+
+            // Try to use proof image if available, otherwise default
+            if (permintaan.getImage() != null) {
+                donasi.setFoto(permintaan.getImage());
+            } else {
+                donasi.setFoto("default_fulfillment.png");
+            }
+        }
+
+        // Common Updates
         donasi.setPenerima(permintaan.getPenerima());
-        donasi.setKategori(permintaan.getJenisBarang());
-        donasi.setDeskripsi("PERMINTAAN DIPENUHI: " + permintaan.getDeskripsiKebutuhan());
-        donasi.setJumlah(permintaan.getJumlah());
-        donasi.setLokasi(permintaan.getLokasi());
-        donasi.setCreatedAt(LocalDateTime.now());
-        donasi.setUpdatedAt(LocalDateTime.now());
-        donasi.setFoto("default_fulfillment.png");
 
-        StatusDonasi statusDikirim = statusRepository.findByStatus("Dikirim")
+        StatusDonasi statusSelesai = statusRepository.findByStatus("Selesai")
                 .orElseGet(() -> {
                     StatusDonasi s = new StatusDonasi();
-                    s.setStatus("Dikirim");
+                    s.setStatus("Selesai");
                     s.setStatusVerifikasi(true);
                     return statusRepository.save(s);
                 });
-        donasi.setStatusDonasi(statusDikirim);
+        donasi.setStatusDonasi(statusSelesai);
 
-        donasiRepository.save(donasi);
+        Donasi savedDonasi = donasiRepository.save(donasi);
+        permintaan.setDonasi(savedDonasi);
+
         return permintaanRepository.save(permintaan);
     }
 

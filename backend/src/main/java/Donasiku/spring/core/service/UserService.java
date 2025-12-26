@@ -23,6 +23,35 @@ public class UserService {
     private DonasiRepository donasiRepository;
 
     @Transactional
+    public void editProfilWithPhoto(Integer userId, User updatedData,
+            org.springframework.web.multipart.MultipartFile file) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
+
+        if (updatedData.getNama() != null)
+            user.setNama(updatedData.getNama());
+        if (updatedData.getNoTelepon() != null)
+            user.setNoTelepon(updatedData.getNoTelepon());
+        if (updatedData.getEmail() != null)
+            user.setEmail(updatedData.getEmail());
+        // Add other fields if necessary
+
+        if (file != null && !file.isEmpty()) {
+            try {
+                String fileName = System.currentTimeMillis() + "_profile_" + file.getOriginalFilename();
+                java.nio.file.Path path = java.nio.file.Paths.get("uploads/" + fileName);
+                java.nio.file.Files.createDirectories(path.getParent());
+                java.nio.file.Files.write(path, file.getBytes());
+                user.setFotoProfil(fileName);
+            } catch (java.io.IOException e) {
+                throw new RuntimeException("Gagal menyimpan foto: " + e.getMessage());
+            }
+        }
+
+        userRepository.save(user);
+    }
+
+    @Transactional
     public void editProfil(Integer userId, User updatedData) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));

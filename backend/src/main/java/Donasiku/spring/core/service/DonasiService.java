@@ -38,7 +38,7 @@ public class DonasiService {
                 .orElseThrow(() -> new RuntimeException("Donatur tidak ditemukan"));
 
         // 2. Handle Lokasi (Find existing or create new)
-        Lokasi lokasi = lokasiRepository.findByAlamatLengkap(lokasiName)
+        Lokasi lokasi = lokasiRepository.findFirstByAlamatLengkap(lokasiName)
                 .orElseGet(() -> {
                     Lokasi newLokasi = new Lokasi();
                     newLokasi.setAlamatLengkap(lokasiName);
@@ -165,6 +165,42 @@ public class DonasiService {
         return donasiRepository.findById(id).orElseThrow(() -> new RuntimeException("Donasi tidak ditemukan"));
     }
 
+    // FR-06: Search & Filter Donasi
+    public List<Donasi> searchDonasi(String kategori, String lokasi, Boolean availableOnly) {
+        List<Donasi> results;
+
+        // Filter by availability first
+        if (availableOnly != null && availableOnly) {
+            if (kategori != null && !kategori.trim().isEmpty()) {
+                // Available + kategori filter
+                results = donasiRepository.findByKategoriContainingIgnoreCaseAndPenerimaIsNull(kategori);
+            } else {
+                // Available only
+                results = donasiRepository.findByPenerimaIsNull();
+            }
+        } else {
+            if (kategori != null && !kategori.trim().isEmpty()) {
+                // Kategori filter only
+                results = donasiRepository.findByKategoriContainingIgnoreCase(kategori);
+            } else {
+                // No filter - all donations
+                results = donasiRepository.findAll();
+            }
+        }
+
+        // Filter by lokasi (in-memory filter if specified)
+        if (lokasi != null && !lokasi.trim().isEmpty()) {
+            final String lokasiLower = lokasi.toLowerCase();
+            results = results.stream()
+                    .filter(d -> d.getLokasi() != null &&
+                            d.getLokasi().getAlamatLengkap() != null &&
+                            d.getLokasi().getAlamatLengkap().toLowerCase().contains(lokasiLower))
+                    .toList();
+        }
+
+        return results;
+    }
+
     // --- FR-XX: Edit & Hapus Donasi (Sesuai Diagram) ---
     @Transactional
     public void hapusDonasi(Integer donasiId, Integer userId) {
@@ -179,25 +215,47 @@ public class DonasiService {
     }
 
     @Transactional
-    public void editDonasi(Integer donasiId, Donasi updatedData, Integer userId) {
+    public void editDonasiWithFile(Integer donasiId, DonasiRequest updatedData, String lokasiName,
+            org.springframework.web.multipart.MultipartFile file) {
         Donasi donasi = donasiRepository.findById(donasiId)
                 .orElseThrow(() -> new RuntimeException("Donasi tidak ditemukan"));
 
-        if (!donasi.getDonatur().getUserId().equals(userId)) {
+        if (!donasi.getDonatur().getUserId().equals(updatedData.getDonaturId())) {
             throw new RuntimeException("Anda bukan pemilik donasi ini.");
         }
 
-        if (updatedData.getDeskripsi() != null)
-            donasi.setDeskripsi(updatedData.getDeskripsi());
-        if (updatedData.getKategori() != null)
-            donasi.setKategori(updatedData.getKategori());
-        if (updatedData.getJumlah() != null)
-            donasi.setJumlah(updatedData.getJumlah());
-        // Foto handle separately usually, but minimal logic here
-        if (updatedData.getFoto() != null)
-            donasi.setFoto(updatedData.getFoto());
-
+        donasi.setDeskripsi(updatedData.getDeskripsi());
+        donasi.setKategori(updatedData.getKategori());
+        donasi.setJumlah(updatedData.getJumlah());
         donasi.setUpdatedAt(LocalDateTime.now());
+
+        // Update Location if needed
+        if (lokasiName != null && !lokasiName.isEmpty()) {
+            // Find or create location (Reuse logic from create)
+            Lokasi lokasi = lokasiRepository.findFirstByAlamatLengkap(lokasiName)
+                    .orElseGet(() -> {
+                        Lokasi newLokasi = new Lokasi();
+                        newLokasi.setAlamatLengkap(lokasiName);
+                        newLokasi.setGarisLintang(0.0);
+                        newLokasi.setGarisBujur(0.0);
+                        return lokasiRepository.save(newLokasi);
+                    });
+            donasi.setLokasi(lokasi);
+        }
+
+        // Update File if provided
+        if (file != null && !file.isEmpty()) {
+            try {
+                String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+                java.nio.file.Path path = java.nio.file.Paths.get("uploads/" + fileName);
+                java.nio.file.Files.createDirectories(path.getParent());
+                java.nio.file.Files.write(path, file.getBytes());
+                donasi.setFoto(fileName);
+            } catch (java.io.IOException e) {
+                throw new RuntimeException("Gagal menyimpan file: " + e.getMessage());
+            }
+        }
+
         donasiRepository.save(donasi);
     }
 

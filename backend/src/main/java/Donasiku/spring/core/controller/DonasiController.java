@@ -24,6 +24,7 @@ public class DonasiController {
     @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<?> createDonasi(
             @RequestParam("namaBarang") String namaBarang,
+            @RequestParam("kategori") String kategori, // Added explicit kategori
             @RequestParam("deskripsi") String deskripsi,
             @RequestParam("jumlah") Integer jumlah,
             @RequestParam("lokasi") String lokasi,
@@ -31,15 +32,22 @@ public class DonasiController {
             @RequestParam(value = "file", required = false) MultipartFile file) {
         try {
             DonasiRequest request = new DonasiRequest();
-            request.setDeskripsi(deskripsi);
-            request.setKategori(namaBarang); // Map namaBarang to kategori
+            // Combine Nama Barang into Deskripsi because Donasi entity has no 'name' field
+            String fullDescription = "Barang: " + namaBarang + ". " + deskripsi;
+            request.setDeskripsi(fullDescription);
+
+            request.setKategori(kategori); // Map correctly
             request.setJumlah(jumlah);
             request.setDonaturId(userId);
 
             Donasi donasi = donasiService.createDonasiWithFile(request, lokasi, file);
             return new ResponseEntity<>(donasi, HttpStatus.CREATED);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            // Return JSON error response instead of plain text
+            java.util.Map<String, String> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("error", "true");
+            errorResponse.put("message", e.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -79,6 +87,7 @@ public class DonasiController {
         }
     }
 
+<<<<<<< Updated upstream
     // Helper: List/Search Donasi (Class Diagram: cariDonasi)
     @GetMapping
     public ResponseEntity<List<Donasi>> searchDonasi(
@@ -97,6 +106,26 @@ public class DonasiController {
             return ResponseEntity.ok(results);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(null);
+=======
+    // FR-06 & FR-08: List & Filter Donasi
+    @GetMapping
+    public ResponseEntity<List<Donasi>> listDonasi(
+            @RequestParam(required = false) String kategori,
+            @RequestParam(required = false) String lokasi,
+            @RequestParam(required = false) Boolean availableOnly) {
+        try {
+            // If no filters, return all donations
+            if (kategori == null && lokasi == null && availableOnly == null) {
+                return ResponseEntity.ok(donasiService.getAllDonasi());
+            }
+
+            // Use search with filters
+            List<Donasi> results = donasiService.searchDonasi(kategori, lokasi, availableOnly);
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(List.of());
+>>>>>>> Stashed changes
         }
     }
 
@@ -126,54 +155,32 @@ public class DonasiController {
         }
     }
 
-    // FR-XX: Edit Donasi dengan Error Handling
-    @PutMapping("/{id}")
+    // FR-XX: Edit Donasi dengan Error Handling (Updated to support File and Name)
+    @PutMapping(path = "/{id}", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<?> editDonasi(
             @PathVariable("id") Integer donasiId,
-            @RequestBody Donasi updatedData,
-            @RequestParam("userId") Integer userId) {
+            @RequestParam("namaBarang") String namaBarang,
+            @RequestParam("kategori") String kategori,
+            @RequestParam("deskripsi") String deskripsi,
+            @RequestParam("jumlah") Integer jumlah,
+            @RequestParam("lokasi") String lokasi,
+            @RequestParam("userId") Integer userId,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
         try {
             // Validasi input
-            if (donasiId == null || donasiId <= 0) {
+            if (donasiId == null || donasiId <= 0)
                 return ResponseEntity.badRequest().body("Error: Donasi ID tidak valid");
-            }
-
-            if (userId == null || userId <= 0) {
+            if (userId == null || userId <= 0)
                 return ResponseEntity.badRequest().body("Error: User ID tidak valid");
-            }
 
-            if (updatedData == null) {
-                return ResponseEntity.badRequest().body("Error: Data donasi tidak boleh kosong");
-            }
+            DonasiRequest request = new DonasiRequest();
+            String fullDescription = "Barang: " + namaBarang + ". " + deskripsi;
+            request.setDeskripsi(fullDescription);
+            request.setKategori(kategori);
+            request.setJumlah(jumlah);
+            request.setDonaturId(userId);
 
-            // Validasi field deskripsi
-            if (updatedData.getDeskripsi() != null) {
-                String desc = updatedData.getDeskripsi().trim();
-                if (desc.isEmpty()) {
-                    return ResponseEntity.badRequest().body("Error: Deskripsi tidak boleh kosong");
-                }
-                if (desc.length() > 1000) {
-                    return ResponseEntity.badRequest().body("Error: Deskripsi maksimal 1000 karakter");
-                }
-            }
-
-            // Validasi field kategori
-            if (updatedData.getKategori() != null) {
-                String kategori = updatedData.getKategori().trim();
-                if (kategori.isEmpty()) {
-                    return ResponseEntity.badRequest().body("Error: Kategori tidak boleh kosong");
-                }
-                if (kategori.length() > 100) {
-                    return ResponseEntity.badRequest().body("Error: Kategori maksimal 100 karakter");
-                }
-            }
-
-            // Validasi field jumlah
-            if (updatedData.getJumlah() != null && updatedData.getJumlah() <= 0) {
-                return ResponseEntity.badRequest().body("Error: Jumlah harus lebih dari 0");
-            }
-
-            donasiService.editDonasi(donasiId, updatedData, userId);
+            donasiService.editDonasiWithFile(donasiId, request, lokasi, file);
             return ResponseEntity.ok("Donasi berhasil diupdate.");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
@@ -182,7 +189,7 @@ public class DonasiController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(404).body("Error: Donasi tidak ditemukan - " + e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error: Gagal memperbarui donasi");
+            return ResponseEntity.status(500).body("Error: Gagal memperbarui donasi - " + e.getMessage());
         }
     }
 }

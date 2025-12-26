@@ -46,6 +46,16 @@ export default function LoginPage() {
       // Data dari backend sekarang: 
       // { success: true, message: "...", username, userId, email, role: "DONATUR"/"PENERIMA" }
 
+<<<<<<< Updated upstream
+=======
+      const userRole = data.role ? data.role.toLowerCase() : 'donatur';
+
+      // Validate Role (admin can login from any tab)
+      if (userRole !== 'admin' && userRole !== selectedRole) {
+        throw new Error('Akun tidak sesuai. Silakan login sebagai ' + (userRole === 'donatur' ? 'Donatur' : 'Penerima'));
+      }
+
+>>>>>>> Stashed changes
       const sessionData = {
         username: data.username,
         userId: data.userId,

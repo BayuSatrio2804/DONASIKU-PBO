@@ -19,13 +19,14 @@ import lombok.NoArgsConstructor;
 @Data // Lombok: Membuat getters, setters, toString, equals, dan hashCode
 @NoArgsConstructor // Lombok: Konstruktor tanpa argumen
 @AllArgsConstructor // Lombok: Konstruktor dengan semua argumen
-
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Sesuai dengan AUTO_INCREMENT
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private Integer userId; // PK
+    @com.fasterxml.jackson.annotation.JsonProperty("id")
+    private Integer userId;
 
     @Column(name = "username", unique = true, nullable = false, length = 99)
     private String username;
@@ -38,6 +39,7 @@ public class User {
     private String password;
 
     @Column(name = "nama", nullable = false, length = 99)
+    @com.fasterxml.jackson.annotation.JsonProperty("name")
     private String nama;
 
     @Column(name = "alamat", columnDefinition = "TEXT") // Mapped ke TEXT
@@ -47,6 +49,7 @@ public class User {
     private String noTelepon;
 
     @Column(name = "foto_profil", length = 99)
+    @com.fasterxml.jackson.annotation.JsonProperty("photo")
     private String fotoProfil;
 
     // Mapping Enum SQL ke Enum Java
@@ -57,6 +60,13 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private UserStatus status;
+
+    // Verification fields for FR-16
+    @Column(name = "is_verified")
+    private Boolean isVerified = false;
+
+    @Column(name = "document_path", length = 255)
+    private String documentPath;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

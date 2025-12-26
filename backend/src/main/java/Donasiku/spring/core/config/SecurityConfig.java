@@ -21,19 +21,20 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // KONFIGURASI PENTING: Membuka semua akses untuk Testing
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable()) // Matikan CSRF agar Postman/Terminal bisa POST data
-            .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll() // Izinkan SEMUA request tanpa perlu Login
-            );
-            
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable()) // Matikan CSRF agar Postman/Terminal bisa POST data
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll() // Izinkan SEMUA request tanpa perlu Login
+                );
+
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:3001"));
+        configuration.setAllowedOrigins(
+                Arrays.asList("http://localhost:3000", "http://localhost:3001", "http://localhost:5173"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

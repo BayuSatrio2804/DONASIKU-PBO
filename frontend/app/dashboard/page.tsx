@@ -32,6 +32,7 @@ export default function DashboardPage() {
         fetchPermintaan(userData.userId);
         fetchDonasiBersedia();
         fetchDonasiPerluDikonfirmasi(userData.userId);
+        fetchDonasiPenerima(userData.userId);
       }
 
       // Fetch data untuk donatur
@@ -48,6 +49,37 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
+
+    // Add event listener to refresh data when window regains focus
+    const handleFocus = () => {
+      const sessionStr = localStorage.getItem('userSession');
+      if (sessionStr) {
+        try {
+          const userData = JSON.parse(sessionStr);
+          // Refresh data when user comes back to this page
+          if (userData.role?.toLowerCase() === 'penerima' && userData.userId) {
+            fetchPermintaan(userData.userId);
+            fetchDonasiBersedia();
+            fetchDonasiPerluDikonfirmasi(userData.userId);
+            fetchDonasiPenerima(userData.userId);
+          }
+          if (userData.role?.toLowerCase() === 'donatur' && userData.userId) {
+            fetchDonasiSaya(userData.userId);
+            fetchAllPermintaan();
+            fetchDonasiPerluDikonfirmasi(userData.userId);
+          }
+        } catch (e) {
+          console.error("Error refreshing data:", e);
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [router]);
 
   const fetchPermintaan = async (userId?: number) => {
@@ -70,10 +102,17 @@ export default function DashboardPage() {
       const response = await fetch('http://localhost:8080/api/donasi');
       if (response.ok) {
         const data = await response.json();
+        console.log('📦 All donasi from API:', data);
+        console.log('👤 Current userId:', userId);
+        console.log('🔍 Matching donasi:', data.filter((d: any) => {
+          console.log(`  - Donasi #${d.donasiId}: donatur userId = ${d.donatur?.userId}, match = ${Number(d.donatur?.userId) === Number(userId)}`);
+          return Number(d.donatur?.userId) === Number(userId);
+        }));
         // Filter donasi yang dibuat oleh user (donatur) dan urutkan dari yang terbaru
         const userDonasi = data
           .filter((donasi: any) => Number(donasi.donatur?.userId) === Number(userId))
           .sort((a: any, b: any) => (b.donasiId || 0) - (a.donasiId || 0));
+        console.log('✅ Final userDonasi:', userDonasi);
         setDonasiSaya(userDonasi);
       }
     } catch (err) {

@@ -8,10 +8,11 @@ import java.util.List;
 
 @Entity
 @Table(name = "Chat", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"donatur_user_id", "penerima_user_id"})
+        @UniqueConstraint(columnNames = { "donatur_user_id", "penerima_user_id" })
 })
 @Data
 @NoArgsConstructor
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Chat {
 
     @Id
@@ -21,15 +22,16 @@ public class Chat {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "donatur_user_id", nullable = false)
-    private User donatur; 
+    private User donatur;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "penerima_user_id", nullable = false)
-    private User penerima; 
+    private User penerima;
 
     @Column(name = "started_at", updatable = false)
     private LocalDateTime startedAt;
-    
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChatMessage> messages;
 }
