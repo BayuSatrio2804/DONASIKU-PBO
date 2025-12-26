@@ -27,16 +27,49 @@ public class AuthService {
 
     @Transactional
     public User registerNewUser(RegisterRequest request, org.springframework.web.multipart.MultipartFile document) {
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username sudah digunakan.");
-        }
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email sudah terdaftar.");
+        // Check for existing users (username or email)
+        Optional<User> existingUserByUsername = userRepository.findByUsername(request.getUsername());
+        Optional<User> existingUserByEmail = userRepository.findByEmail(request.getEmail());
+
+        User userToUpdate = null;
+
+        if (existingUserByUsername.isPresent()) {
+            User u = existingUserByUsername.get();
+            if (u.getStatus() != User.UserStatus.suspended) {
+                throw new RuntimeException("Username sudah digunakan.");
+            }
+            userToUpdate = u;
         }
 
-        User newUser = new User();
-        newUser.setUsername(request.getUsername());
-        newUser.setEmail(request.getEmail());
+        if (existingUserByEmail.isPresent()) {
+            User u = existingUserByEmail.get();
+            if (u.getStatus() != User.UserStatus.suspended) {
+                throw new RuntimeException("Email sudah terdaftar.");
+            }
+            if (userToUpdate != null && !userToUpdate.getUserId().equals(u.getUserId())) {
+                throw new RuntimeException("Konflik data: Username dan Email terdaftar pada user yang berbeda.");
+            }
+            userToUpdate = u;
+        }
+
+        User newUser;
+        if (userToUpdate != null) {
+            // Update existing suspended user (Re-registration)
+            newUser = userToUpdate;
+            // Note: We don't change username/email as they matched or are new (if only one
+            // matched)
+            // But if only one matched, we should probably update the other field if needed?
+            // For simplicity, let's assume they re-register with same credentials or we
+            // just update fields.
+            newUser.setEmail(request.getEmail()); // Ensure email is fresh if it was unique-username match
+            newUser.setUsername(request.getUsername());
+        } else {
+            // Create new user
+            newUser = new User();
+            newUser.setUsername(request.getUsername());
+            newUser.setEmail(request.getEmail());
+        }
+
         newUser.setPassword(passwordEncoder.encode(request.getPassword()));
         newUser.setNama(request.getNama() != null ? request.getNama() : request.getUsername());
         newUser.setAlamat(request.getAlamat());
@@ -44,26 +77,21 @@ public class AuthService {
 
         try {
             String roleInput = request.getRole().toLowerCase();
-
-            // Restrict role admin - hanya bisa dibuat via backend/seeder
             if ("admin".equals(roleInput)) {
                 throw new RuntimeException("Role admin tidak dapat didaftarkan melalui registration endpoint.");
             }
-
             newUser.setRole(User.UserRole.valueOf(roleInput));
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Role tidak valid: " + request.getRole());
         }
 
-        newUser.setStatus(User.UserStatus.active);
-        newUser.setCreatedAt(LocalDateTime.now());
+        newUser.setStatus(User.UserStatus.active); // Reactivate user
+        newUser.setCreatedAt(LocalDateTime.now()); // Reset created time? Or keep original? Let's update it.
         newUser.setUpdatedAt(LocalDateTime.now());
 
-        // FR-16: Penerima requires admin verification
         if (newUser.getRole() == User.UserRole.penerima) {
-            newUser.setIsVerified(false); // Pending verification
+            newUser.setIsVerified(false); // Reset to pending
 
-            // Handle document upload if provided
             if (document != null && !document.isEmpty()) {
                 try {
                     String fileName = "verif_" + newUser.getUsername() + "_" + System.currentTimeMillis() + "_"
@@ -77,7 +105,7 @@ public class AuthService {
                 }
             }
         } else {
-            newUser.setIsVerified(true); // Donatur auto-verified
+            newUser.setIsVerified(true);
         }
 
         return userRepository.save(newUser);
