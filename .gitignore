@@ -10,6 +10,15 @@ backend/.classpath
 backend/.project
 backend/.settings/
 backend/*.log
+backend/uploads/
+
+backend/uploads/
+backend/uploads/
+backend/uploads/
+backend/uploads/
+backend/uploads/
+backend/uploads/
+backend/uploads/
 
 # Frontend
 frontend/node_modules/

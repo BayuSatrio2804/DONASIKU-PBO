@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -174,11 +173,14 @@ public class PermintaanController {
     }
 
     // New Endpoint for Simple Fulfillment (Donor accepts request directly)
-    @PostMapping("/{id}/fulfill")
+    // New Endpoint for Simple Fulfillment (Donor accepts request directly)
+    @PostMapping(path = "/{id}/fulfill", consumes = { org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<?> fulfill(@PathVariable("id") Integer permintaanId,
-            @RequestParam("donaturId") Integer donaturId) {
+            @RequestParam("donaturId") Integer donaturId,
+            @RequestParam("jumlah") Integer jumlah,
+            @RequestParam(value = "file", required = true) org.springframework.web.multipart.MultipartFile file) {
         try {
-            PermintaanDonasi p = permintaanService.fulfillPermintaan(permintaanId, donaturId);
+            PermintaanDonasi p = permintaanService.fulfillPermintaan(permintaanId, donaturId, jumlah, file);
             return ResponseEntity.ok(p);
         } catch (RuntimeException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -233,6 +235,28 @@ public class PermintaanController {
             return ResponseEntity.status(404).body("Error: Permintaan tidak ditemukan - " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: Gagal membatalkan permintaan");
+        }
+    }
+
+    // New Endpoint: Edit Permintaan (Supports File & Name)
+    @PostMapping(path = "/{id}/update", consumes = { org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE })
+    public ResponseEntity<?> editPermintaan(@PathVariable("id") Integer permintaanId,
+            @RequestParam("userId") Integer userId,
+            @RequestParam("jumlah") Integer jumlah,
+            @RequestParam("deskripsi") String deskripsi,
+            @RequestParam(value = "judul", required = false) String judul,
+            @RequestParam(value = "file", required = false) org.springframework.web.multipart.MultipartFile file) {
+        try {
+            PermintaanDonasi data = new PermintaanDonasi();
+            data.setJumlah(jumlah);
+            data.setDeskripsiKebutuhan(deskripsi);
+            if (judul != null)
+                data.setJenisBarang(judul);
+
+            PermintaanDonasi updated = permintaanService.editPermintaan(permintaanId, data, userId, file);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 }

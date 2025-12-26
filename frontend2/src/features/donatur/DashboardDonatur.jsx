@@ -406,7 +406,7 @@ const DashboardDonatur = () => {
                     <div className="space-y-2 mb-6 text-sm">
                       <div className="flex items-center gap-2 text-gray-600">
                         <FiPackage className="text-indigo-500" />
-                        <span className="font-semibold">{req.target_jumlah} Pcs Diminta</span>
+                        <span className="font-semibold">{req.jumlah || req.target_jumlah} Pcs Diminta</span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-600">
                         <FiMapPin className="text-indigo-500" />
@@ -485,7 +485,7 @@ const DashboardDonatur = () => {
                     <div className="space-y-2 mb-6 text-sm">
                       <div className="flex items-center gap-2 text-gray-600">
                         <FiPackage className="text-yellow-500" />
-                        <span className="font-semibold">{req.target_jumlah} Pcs Dibutuhkan</span>
+                        <span className="font-semibold">{req.jumlah || req.target_jumlah} Pcs Dibutuhkan</span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-600">
                         <FiMapPin className="text-yellow-500" />
