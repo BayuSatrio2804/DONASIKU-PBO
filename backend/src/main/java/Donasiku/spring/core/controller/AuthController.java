@@ -38,13 +38,66 @@ public class AuthController {
                     newUser.getUsername(),
                     newUser.getUserId(),
                     newUser.getEmail(),
-                    newUser.getRole().toString());
+                    newUser.getRole().toString(),
+                    newUser.getNama(),
+                    newUser.getFotoProfil());
 
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException e) {
             AuthResponse errorResponse = new AuthResponse(
                     false,
                     e.getMessage(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null);
+            return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    // New Endpoint for Pendaftaran with Document Upload
+    @PostMapping(value = "/register", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> registerUserMultipart(
+            @org.springframework.web.bind.annotation.RequestParam("email") String email,
+            @org.springframework.web.bind.annotation.RequestParam("password") String password,
+            @org.springframework.web.bind.annotation.RequestParam("role") String role,
+            @org.springframework.web.bind.annotation.RequestParam(value = "username", required = false) String username,
+            @org.springframework.web.bind.annotation.RequestParam(value = "nama", required = false) String nama,
+            @org.springframework.web.bind.annotation.RequestParam(value = "alamat", required = false) String alamat,
+            @org.springframework.web.bind.annotation.RequestParam(value = "noTelepon", required = false) String noTelepon,
+            @org.springframework.web.bind.annotation.RequestParam(value = "document", required = false) org.springframework.web.multipart.MultipartFile document) {
+        try {
+            RegisterRequest request = new RegisterRequest();
+            // Generate username from email if not provided
+            request.setUsername(username != null && !username.isEmpty() ? username : email.split("@")[0]);
+            request.setEmail(email);
+            request.setPassword(password);
+            request.setRole(role);
+            request.setNama(nama);
+            request.setAlamat(alamat);
+            request.setNoTelepon(noTelepon);
+
+            User newUser = authService.registerNewUser(request, document);
+
+            AuthResponse response = new AuthResponse(
+                    true,
+                    "User " + newUser.getUsername() + " berhasil didaftarkan.",
+                    newUser.getUsername(),
+                    newUser.getUserId(),
+                    newUser.getEmail(),
+                    newUser.getRole().toString(),
+                    newUser.getNama(),
+                    newUser.getFotoProfil());
+
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            AuthResponse errorResponse = new AuthResponse(
+                    false,
+                    e.getMessage(),
+                    null,
+                    null,
                     null,
                     null,
                     null,
@@ -65,7 +118,9 @@ public class AuthController {
                     authenticatedUser.getUsername(),
                     authenticatedUser.getUserId(),
                     authenticatedUser.getEmail(),
-                    authenticatedUser.getRole().toString());
+                    authenticatedUser.getRole().toString(),
+                    authenticatedUser.getNama(),
+                    authenticatedUser.getFotoProfil());
 
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (RuntimeException e) {
@@ -75,8 +130,38 @@ public class AuthController {
                     null,
                     null,
                     null,
+                    null,
+                    null,
                     null);
             return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logoutUser() {
+        return ResponseEntity.ok("Logout berhasil.");
+    }
+
+    // FR-16: Check verification status by email
+    @org.springframework.web.bind.annotation.GetMapping("/check-status")
+    public ResponseEntity<?> checkStatus(@org.springframework.web.bind.annotation.RequestParam String email) {
+        try {
+            User user = authService.findByEmail(email);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email tidak ditemukan");
+            }
+
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("name", user.getNama());
+            response.put("email", user.getEmail());
+            response.put("role", user.getRole().toString());
+            response.put("status", user.getStatus() != null ? user.getStatus().toString() : "active");
+            response.put("isVerified", user.getIsVerified() != null ? user.getIsVerified() : false);
+            response.put("createdAt", user.getCreatedAt());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
 }

@@ -1,7 +1,6 @@
 package Donasiku.spring.core.controller;
 
-import Donasiku.spring.core.entity.Chat;
-import Donasiku.spring.core.entity.ChatMessage;
+import Donasiku.spring.core.dto.*;
 import Donasiku.spring.core.service.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -45,37 +44,54 @@ public class ChatController {
             }
 
             chatService.kirimPesan(message.trim(), senderId, receiverId);
-            return ResponseEntity.ok("Pesan berhasil dikirim.");
+            return ResponseEntity.ok(WebResponse.builder().success(true).message("Pesan berhasil dikirim.").build());
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(WebResponse.builder().success(false).message(e.getMessage()).build());
         } catch (RuntimeException e) {
-            return ResponseEntity.status(500).body("Error: Gagal mengirim pesan - " + e.getMessage());
+            return ResponseEntity.status(500).body(
+                    WebResponse.builder().success(false).message("Gagal mengirim pesan - " + e.getMessage()).build());
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error: Terjadi kesalahan sistem");
+            return ResponseEntity.status(500)
+                    .body(WebResponse.builder().success(false).message("Terjadi kesalahan sistem").build());
+        }
+    }
+
+    // Hapus Pesan
+    @DeleteMapping("/message/{messageId}")
+    public ResponseEntity<?> deleteMessage(@PathVariable("messageId") Integer messageId) {
+        try {
+            chatService.deleteMessage(messageId);
+            return ResponseEntity.ok(WebResponse.builder().success(true).message("Pesan berhasil dihapus").build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404)
+                    .body(WebResponse.builder().success(false).message(e.getMessage()).build());
         }
     }
 
     // Lihat Riwayat Chat dengan Error Handling
-    @GetMapping("/{chatId}/history")
-    public ResponseEntity<?> getChatHistory(@PathVariable("chatId") Integer chatId) {
+    @GetMapping("/{peerId}/history")
+    public ResponseEntity<?> getChatHistory(
+            @PathVariable("peerId") Integer peerId,
+            @RequestParam("currentUserId") Integer currentUserId) {
         try {
-            if (chatId == null || chatId <= 0) {
-                return ResponseEntity.badRequest().body("Error: Chat ID tidak valid");
+            if (peerId == null || peerId <= 0) {
+                return ResponseEntity.badRequest()
+                        .body(WebResponse.builder().success(false).message("Error: Peer ID tidak valid").build());
             }
 
-            List<ChatMessage> history = chatService.lihatRiwayat(chatId);
+            List<MessageDTO> history = chatService.lihatRiwayatByPeers(currentUserId, peerId);
 
-            if (history == null || history.isEmpty()) {
-                return ResponseEntity.ok(List.of()); // Return empty list instead of error
-            }
-
-            return ResponseEntity.ok(history);
+            return ResponseEntity.ok(WebResponse.<List<MessageDTO>>builder()
+                    .success(true)
+                    .data(history)
+                    .build());
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(404).body("Error: Chat tidak ditemukan - " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(WebResponse.builder().success(false).message(e.getMessage()).build());
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error: Gagal mengambil riwayat chat");
+            return ResponseEntity.status(500)
+                    .body(WebResponse.builder().success(false).message("Gagal mengambil riwayat chat").build());
         }
     }
 
@@ -84,22 +100,22 @@ public class ChatController {
     public ResponseEntity<?> getUserChats(@PathVariable("userId") Integer userId) {
         try {
             if (userId == null || userId <= 0) {
-                return ResponseEntity.badRequest().body("Error: User ID tidak valid");
+                return ResponseEntity.badRequest()
+                        .body(WebResponse.builder().success(false).message("Error: User ID tidak valid").build());
             }
 
-            List<Chat> chats = chatService.getChatListByUser(userId);
+            List<ChatDTO> chats = chatService.getChatListByUser(userId);
 
-            if (chats == null) {
-                return ResponseEntity.ok(List.of()); // Return empty list
-            }
-
-            return ResponseEntity.ok(chats);
+            return ResponseEntity.ok(WebResponse.<List<ChatDTO>>builder()
+                    .success(true)
+                    .data(chats)
+                    .build());
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(404).body("Error: User tidak ditemukan - " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(WebResponse.builder().success(false).message(e.getMessage()).build());
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error: Gagal mengambil daftar chat");
+            return ResponseEntity.status(500)
+                    .body(WebResponse.builder().success(false).message("Gagal mengambil daftar chat").build());
         }
     }
 }

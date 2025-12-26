@@ -26,8 +26,7 @@ public class AuthService {
     }
 
     @Transactional
-    public User registerNewUser(RegisterRequest request) {
-        // [Kode registerNewUser sudah ada]
+    public User registerNewUser(RegisterRequest request, org.springframework.web.multipart.MultipartFile document) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("Username sudah digunakan.");
         }
@@ -45,37 +44,66 @@ public class AuthService {
 
         try {
             String roleInput = request.getRole().toLowerCase();
-            
+
             // Restrict role admin - hanya bisa dibuat via backend/seeder
             if ("admin".equals(roleInput)) {
                 throw new RuntimeException("Role admin tidak dapat didaftarkan melalui registration endpoint.");
             }
-            
+
             newUser.setRole(User.UserRole.valueOf(roleInput));
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Role tidak valid: " + request.getRole());
         }
-        
+
         newUser.setStatus(User.UserStatus.active);
         newUser.setCreatedAt(LocalDateTime.now());
         newUser.setUpdatedAt(LocalDateTime.now());
 
+        // FR-16: Penerima requires admin verification
+        if (newUser.getRole() == User.UserRole.penerima) {
+            newUser.setIsVerified(false); // Pending verification
+
+            // Handle document upload if provided
+            if (document != null && !document.isEmpty()) {
+                try {
+                    String fileName = "verif_" + newUser.getUsername() + "_" + System.currentTimeMillis() + "_"
+                            + document.getOriginalFilename();
+                    java.nio.file.Path path = java.nio.file.Paths.get("uploads/" + fileName);
+                    java.nio.file.Files.createDirectories(path.getParent());
+                    java.nio.file.Files.write(path, document.getBytes());
+                    newUser.setDocumentPath(fileName);
+                } catch (java.io.IOException e) {
+                    throw new RuntimeException("Gagal mengunggah dokumen: " + e.getMessage());
+                }
+            }
+        } else {
+            newUser.setIsVerified(true); // Donatur auto-verified
+        }
+
         return userRepository.save(newUser);
     }
 
+    @Transactional
+    public User registerNewUser(RegisterRequest request) {
+        return registerNewUser(request, null);
+    }
+
     /**
-     * Metode untuk memverifikasi kredensial pengguna tanpa JWT/Spring Security penuh.
+     * Metode untuk memverifikasi kredensial pengguna tanpa JWT/Spring Security
+     * penuh.
      * Digunakan sebagai dasar untuk login.
      */
     public User authenticateSimple(LoginRequest request) {
         // Cari user berdasarkan username/email
         Optional<User> userOptional = userRepository.findByUsername(request.getUsernameOrEmail());
-        
+
         // Jika tidak ditemukan, coba cari berdasarkan email
         if (userOptional.isEmpty()) {
-            // Karena findByUsernameOrEmail belum ada di UserRepository, kita asumsikan input adalah username untuk saat ini
-            // Jika Anda ingin mendukung login email, Anda harus menambahkan method di UserRepository
-             userOptional = userRepository.findByEmail(request.getUsernameOrEmail()); 
+            // Karena findByUsernameOrEmail belum ada di UserRepository, kita asumsikan
+            // input adalah username untuk saat ini
+            // Jika Anda ingin mendukung login email, Anda harus menambahkan method di
+            // UserRepository
+            userOptional = userRepository.findByEmail(request.getUsernameOrEmail());
         }
 
         if (userOptional.isEmpty()) {
@@ -86,9 +114,22 @@ public class AuthService {
 
         // Verifikasi password: membandingkan input dengan hash yang tersimpan
         if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            // FR-16: Check if penerima is verified by admin
+            if (user.getRole() == User.UserRole.penerima) {
+                Boolean isVerified = user.getIsVerified();
+                if (isVerified == null || !isVerified) {
+                    throw new RuntimeException(
+                            "Akun Anda masih menunggu verifikasi Admin. Silakan cek status di halaman Cek Status Verifikasi.");
+                }
+            }
             return user; // Autentikasi berhasil
         } else {
             throw new RuntimeException("Password salah.");
         }
+    }
+
+    // FR-16: Find user by email for status check
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email).orElse(null);
     }
 }

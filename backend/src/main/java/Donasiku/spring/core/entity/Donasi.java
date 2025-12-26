@@ -2,6 +2,8 @@ package Donasiku.spring.core.entity;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -18,11 +20,13 @@ import lombok.NoArgsConstructor;
 @Table(name = "Donasi")
 @Data
 @NoArgsConstructor
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Donasi {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "donasi_id")
+    @JsonProperty("id")
     private Integer donasiId;
 
     @Column(name = "deskripsi", columnDefinition = "TEXT")
@@ -32,11 +36,12 @@ public class Donasi {
     private String kategori;
 
     @Column(name = "foto", length = 99)
+    @JsonProperty("image")
     private String foto;
 
     @Column(name = "jumlah")
     private Integer jumlah;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lokasi_id", nullable = false)
     private Lokasi lokasi;
@@ -47,11 +52,11 @@ public class Donasi {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "donatur_user_id", nullable = false)
-    private User donatur; 
+    private User donatur;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "penerima_user_id")
-    private User penerima; 
+    private User penerima;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

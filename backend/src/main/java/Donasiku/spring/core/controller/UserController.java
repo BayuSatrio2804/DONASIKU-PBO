@@ -2,9 +2,17 @@ package Donasiku.spring.core.controller;
 
 import Donasiku.spring.core.entity.User;
 import Donasiku.spring.core.service.UserService;
+import Donasiku.spring.core.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
+import java.util.List;
+import Donasiku.spring.core.entity.Donasi;
 
 @RestController
 @RequestMapping("/api/users")
@@ -12,6 +20,16 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    // Admin: Get All Users
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return ResponseEntity.ok(users);
+    }
 
     // Get Profil dengan Error Handling
     @GetMapping("/{id}")
@@ -37,7 +55,49 @@ public class UserController {
         }
     }
 
-    // Edit Profil dengan Error Handling
+    // Endpoint for updating profile with photo
+    @PostMapping(value = "/{id}/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateProfileWithPhoto(
+            @PathVariable("id") Integer userId,
+            @RequestParam("name") String name,
+            @RequestParam("phone") String phone,
+            @RequestParam(value = "email", required = false) String email,
+            @RequestParam(value = "photo", required = false) MultipartFile photo) {
+        try {
+            User updatedData = new User();
+            updatedData.setNama(name);
+            updatedData.setNoTelepon(phone);
+            updatedData.setEmail(email);
+            // We ignore address/password here for simplicity as per frontend form, or add
+            // them if needed.
+            // Frontend sends: name, phone.
+
+            userService.editProfilWithPhoto(userId, updatedData, photo);
+            // Fetch updated user to return
+            User updatedUser = userService.getProfil(userId);
+
+            // Wrap in expected structure if needed, or just return user
+            // DetailAkunDonatur expects response.data.data.user or similar?
+            // "const updatedUser = response.data.data.user;" -> Backend usually returns
+            // standardized response?
+            // Let's check AuthController response format. It returns AuthResponse.
+            // But DetailAkunDonatur expects: response.data.data.user...
+            // Standardizing response:
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put("user", updatedUser);
+
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("success", true);
+            response.put("message", "Profil berhasil diperbarui");
+            response.put("data", data);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
+
+    // Edit Profil (JSON only) - Keep existing
     @PutMapping("/{id}")
     public ResponseEntity<?> editProfil(@PathVariable("id") Integer userId, @RequestBody User updatedData) {
         try {
@@ -88,6 +148,66 @@ public class UserController {
             return ResponseEntity.status(404).body("Error: User tidak ditemukan - " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: Gagal memperbarui profil - " + e.getMessage());
+        }
+    }
+
+    // FR-XX: Lihat Riwayat Donasi (Class Diagram: lihatRiwayat)
+    @GetMapping("/{userId}/riwayat")
+    public ResponseEntity<?> getRiwayatDonasi(@PathVariable Integer userId) {
+        try {
+            if (userId == null || userId <= 0) {
+                return ResponseEntity.badRequest().body("Error: User ID tidak valid");
+            }
+
+            List<Donasi> riwayat = userService.getRiwayatDonasi(userId);
+            return ResponseEntity.ok(riwayat);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body("Error: User tidak ditemukan");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: Gagal mengambil riwayat donasi");
+        }
+    }
+
+    // FR-16: Admin - Get Penerima Pending Verification
+    @GetMapping("/penerima/pending")
+    public ResponseEntity<List<User>> getPendingPenerima() {
+        List<User> users = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == User.UserRole.penerima && (u.getIsVerified() == null || !u.getIsVerified()))
+                .toList();
+        return ResponseEntity.ok(users);
+    }
+
+    // FR-16: Admin - Verify Penerima
+    @PostMapping("/{id}/verify")
+    public ResponseEntity<?> verifyUser(@PathVariable("id") Integer userId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
+
+            user.setIsVerified(true);
+            userRepository.save(user);
+
+            return ResponseEntity.ok("User berhasil diverifikasi");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
+
+    // FR-16: Admin - Reject Penerima Verification
+    @PostMapping("/{id}/reject")
+    public ResponseEntity<?> rejectUser(@PathVariable("id") Integer userId) {
+        try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
+
+            user.setIsVerified(false);
+            user.setStatus(User.UserStatus.suspended);
+            userRepository.save(user);
+
+            return ResponseEntity.ok("User berhasil ditolak");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+>>>>>>> Stashed changes
         }
     }
 }

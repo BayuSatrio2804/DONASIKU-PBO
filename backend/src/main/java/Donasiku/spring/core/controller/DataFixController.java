@@ -13,11 +13,16 @@ import java.util.List;
 @RequestMapping("/api/setup")
 public class DataFixController {
 
-    @Autowired private PermintaanDonasiRepository permintaanRepo;
-    @Autowired private DonasiRepository donasiRepo;
-    @Autowired private UserRepository userRepo;
-    @Autowired private LokasiRepository lokasiRepo;
-    @Autowired private StatusDonasiRepository statusRepo;
+    @Autowired
+    private PermintaanDonasiRepository permintaanRepo;
+    @Autowired
+    private DonasiRepository donasiRepo;
+    @Autowired
+    private UserRepository userRepo;
+    @Autowired
+    private LokasiRepository lokasiRepo;
+    @Autowired
+    private StatusDonasiRepository statusRepo;
 
     @GetMapping("/fix-buku")
     public String fixBuku() {
@@ -25,8 +30,8 @@ public class DataFixController {
             // 1. Cari & Hapus "buku" dari Permintaan
             List<PermintaanDonasi> permintaans = permintaanRepo.findAll();
             PermintaanDonasi bukuReq = permintaans.stream()
-                .filter(p -> p.getJenisBarang().equalsIgnoreCase("buku") || p.getJenisBarang().contains("buku"))
-                .findFirst().orElse(null);
+                    .filter(p -> p.getJenisBarang().equalsIgnoreCase("buku") || p.getJenisBarang().contains("buku"))
+                    .findFirst().orElse(null);
 
             if (bukuReq != null) {
                 permintaanRepo.delete(bukuReq);
@@ -35,15 +40,15 @@ public class DataFixController {
             // 2. Buat "buku" sebagai Donasi
             User donatur = userRepo.findByUsername("donatur").orElse(null);
             if (donatur == null) {
-                 // Create dummy donatur if needed
-                 donatur = new User();
-                 donatur.setUsername("donatur_fixed");
-                 donatur.setRole(User.UserRole.donatur);
-                 // skip full details for speed
-                 donatur = userRepo.save(donatur);   
+                // Create dummy donatur if needed
+                donatur = new User();
+                donatur.setUsername("donatur_fixed");
+                donatur.setRole(User.UserRole.donatur);
+                // skip full details for speed
+                donatur = userRepo.save(donatur);
             }
 
-            Lokasi lokasi = lokasiRepo.findByAlamatLengkap("telkom").orElse(null);
+            Lokasi lokasi = lokasiRepo.findFirstByAlamatLengkap("telkom").orElse(null);
             if (lokasi == null) {
                 lokasi = new Lokasi();
                 lokasi.setAlamatLengkap("telkom");
@@ -62,9 +67,9 @@ public class DataFixController {
             donasi.setLokasi(lokasi);
             donasi.setStatusDonasi(status);
             donasi.setCreatedAt(LocalDateTime.now());
-            
+
             donasiRepo.save(donasi);
-            
+
             return "Fixed: Buku moved from Permintaan to Donasi";
         } catch (Exception e) {
             return "Error: " + e.getMessage();
