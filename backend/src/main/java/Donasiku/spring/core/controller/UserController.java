@@ -151,7 +151,6 @@ public class UserController {
         }
     }
 
-<<<<<<< Updated upstream
     // FR-XX: Lihat Riwayat Donasi (Class Diagram: lihatRiwayat)
     @GetMapping("/{userId}/riwayat")
     public ResponseEntity<?> getRiwayatDonasi(@PathVariable Integer userId) {
@@ -166,12 +165,16 @@ public class UserController {
             return ResponseEntity.status(404).body("Error: User tidak ditemukan");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: Gagal mengambil riwayat donasi");
-=======
+        }
+    }
+
     // FR-16: Admin - Get Penerima Pending Verification
     @GetMapping("/penerima/pending")
     public ResponseEntity<List<User>> getPendingPenerima() {
         List<User> users = userRepository.findAll().stream()
-                .filter(u -> u.getRole() == User.UserRole.penerima && (u.getIsVerified() == null || !u.getIsVerified()))
+                .filter(u -> u.getRole() == User.UserRole.penerima &&
+                        (u.getIsVerified() == null || !u.getIsVerified()) &&
+                        (u.getStatus() == null || u.getStatus() != User.UserStatus.suspended))
                 .toList();
         return ResponseEntity.ok(users);
     }
@@ -184,9 +187,29 @@ public class UserController {
                     .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
 
             user.setIsVerified(true);
+            user.setStatus(User.UserStatus.active); // Fix: Ensure status is active
             userRepository.save(user);
 
             return ResponseEntity.ok("User berhasil diverifikasi");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
+    }
+
+    // Temporary Fix for Data
+    @GetMapping("/fix-data")
+    public ResponseEntity<?> fixData() {
+        try {
+            List<User> users = userRepository.findAll();
+            int count = 0;
+            for (User u : users) {
+                if (Boolean.TRUE.equals(u.getIsVerified()) && u.getStatus() == User.UserStatus.suspended) {
+                    u.setStatus(User.UserStatus.active);
+                    userRepository.save(u);
+                    count++;
+                }
+            }
+            return ResponseEntity.ok("Fixed " + count + " users.");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
@@ -206,7 +229,6 @@ public class UserController {
             return ResponseEntity.ok("User berhasil ditolak");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
->>>>>>> Stashed changes
         }
     }
 }

@@ -168,7 +168,11 @@ const KelolaUser = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-5">
-                                            {user.isVerified ? (
+                                            {user.status === 'suspended' ? (
+                                                <span className="flex items-center gap-1 text-red-600 text-xs font-bold">
+                                                    <FiX className="stroke-[3]" /> Ditolak
+                                                </span>
+                                            ) : user.isVerified ? (
                                                 <span className="flex items-center gap-1 text-emerald-600 text-xs font-bold">
                                                     <FiCheck className="stroke-[3]" /> Terverifikasi
                                                 </span>

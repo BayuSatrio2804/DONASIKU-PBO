@@ -1,0 +1,164 @@
+[INFO] Error stacktraces are turned on.
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------------< DonasiKu:Donasiku >--------------------------
+[INFO] Building donasiku-backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ Donasiku ---
+[INFO] Deleting D:\DONASIKU-PBO\DONASIKU-PBO\backend\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ Donasiku ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ Donasiku ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 59 source files with javac [debug release 21] to target\classes
+[INFO] Annotation processing is enabled because one or more processors were found
+  on the class path. A future release of javac may disable annotation processing
+  unless at least one processor is specified by name (-processor), or a search
+  path is specified (--processor-path, --processor-module-path), or annotation
+  processing is enabled explicitly (-proc:only, -proc:full).
+  Use -Xlint:-options to suppress this message.
+  Use -proc:none to disable annotation processing.
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[154,1] illegal start of type
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[154,16] > expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[156,5] illegal start of type
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[156,37] <identifier> expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[157,5] '(' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[169,1] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[169,3] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[169,5] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[169,7] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[172,5] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[171,37] ';' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[209,1] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[209,4] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[209,7] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[209,16] ';' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[209,17] not a statement
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[209,24] ';' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[90,1] illegal start of type
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[90,16] > expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[92,5] illegal start of type
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[92,16] <identifier> expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[93,5] '(' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[109,1] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[109,3] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[109,5] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[109,7] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[112,5] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[111,16] ';' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[128,1] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[128,4] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[128,7] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[128,16] ';' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[128,17] not a statement
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[128,24] ';' expected
+[INFO] 34 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  1.431 s
+[INFO] Finished at: 2025-12-26T13:18:17+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project Donasiku: Compilation failure: Compilation failure: 
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[154,1] illegal start of type
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[154,16] > expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[156,5] illegal start of type
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[156,37] <identifier> expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[157,5] '(' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[169,1] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[169,3] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[169,5] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[169,7] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[172,5] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[171,37] ';' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[209,1] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[209,4] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[209,7] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[209,16] ';' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[209,17] not a statement
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/UserController.java:[209,24] ';' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[90,1] illegal start of type
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[90,16] > expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[92,5] illegal start of type
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[92,16] <identifier> expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[93,5] '(' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[109,1] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[109,3] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[109,5] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[109,7] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[112,5] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[111,16] ';' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[128,1] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[128,4] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[128,7] illegal start of expression
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[128,16] ';' expected
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[128,17] not a statement
+[ERROR] /D:/DONASIKU-PBO/DONASIKU-PBO/backend/src/main/java/Donasiku/spring/core/controller/DonasiController.java:[128,24] ';' expected
+[ERROR] -> [Help 1]
+org.apache.maven.lifecycle.LifecycleExecutionException: Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project Donasiku: Compilation failure
+    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute2 (MojoExecutor.java:333)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute (MojoExecutor.java:316)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:212)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:174)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.access$000 (MojoExecutor.java:75)
+    at org.apache.maven.lifecycle.internal.MojoExecutor$1.run (MojoExecutor.java:162)
+    at org.apache.maven.plugin.DefaultMojosExecutionStrategy.execute (DefaultMojosExecutionStrategy.java:39)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:159)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:105)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:73)
+    at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build (SingleThreadedBuilder.java:53)
+    at org.apache.maven.lifecycle.internal.LifecycleStarter.execute (LifecycleStarter.java:118)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:261)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:173)
+    at org.apache.maven.DefaultMaven.execute (DefaultMaven.java:101)
+    at org.apache.maven.cli.MavenCli.execute (MavenCli.java:906)
+    at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:283)
+    at org.apache.maven.cli.MavenCli.main (MavenCli.java:206)
+    at jdk.internal.reflect.DirectMethodHandleAccessor.invoke (DirectMethodHandleAccessor.java:103)
+    at java.lang.reflect.Method.invoke (Method.java:580)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:255)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:201)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:361)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
+Caused by: org.apache.maven.plugin.compiler.CompilationFailureException: Compilation failure
+    at org.apache.maven.plugin.compiler.AbstractCompilerMojo.execute (AbstractCompilerMojo.java:1212)
+    at org.apache.maven.plugin.compiler.CompilerMojo.execute (CompilerMojo.java:193)
+    at org.apache.maven.plugin.DefaultBuildPluginManager.executeMojo (DefaultBuildPluginManager.java:126)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute2 (MojoExecutor.java:328)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.doExecute (MojoExecutor.java:316)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:212)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:174)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.access$000 (MojoExecutor.java:75)
+    at org.apache.maven.lifecycle.internal.MojoExecutor$1.run (MojoExecutor.java:162)
+    at org.apache.maven.plugin.DefaultMojosExecutionStrategy.execute (DefaultMojosExecutionStrategy.java:39)
+    at org.apache.maven.lifecycle.internal.MojoExecutor.execute (MojoExecutor.java:159)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:105)
+    at org.apache.maven.lifecycle.internal.LifecycleModuleBuilder.buildProject (LifecycleModuleBuilder.java:73)
+    at org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreadedBuilder.build (SingleThreadedBuilder.java:53)
+    at org.apache.maven.lifecycle.internal.LifecycleStarter.execute (LifecycleStarter.java:118)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:261)
+    at org.apache.maven.DefaultMaven.doExecute (DefaultMaven.java:173)
+    at org.apache.maven.DefaultMaven.execute (DefaultMaven.java:101)
+    at org.apache.maven.cli.MavenCli.execute (MavenCli.java:906)
+    at org.apache.maven.cli.MavenCli.doMain (MavenCli.java:283)
+    at org.apache.maven.cli.MavenCli.main (MavenCli.java:206)
+    at jdk.internal.reflect.DirectMethodHandleAccessor.invoke (DirectMethodHandleAccessor.java:103)
+    at java.lang.reflect.Method.invoke (Method.java:580)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launchEnhanced (Launcher.java:255)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.launch (Launcher.java:201)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.mainWithExitCode (Launcher.java:361)
+    at org.codehaus.plexus.classworlds.launcher.Launcher.main (Launcher.java:314)
+[ERROR] 
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

@@ -87,26 +87,6 @@ public class DonasiController {
         }
     }
 
-<<<<<<< Updated upstream
-    // Helper: List/Search Donasi (Class Diagram: cariDonasi)
-    @GetMapping
-    public ResponseEntity<List<Donasi>> searchDonasi(
-            @RequestParam(required = false) String kategori,
-            @RequestParam(required = false) Double lat,
-            @RequestParam(required = false) Double lon,
-            @RequestParam(required = false) Double radius) {
-        try {
-            // Validate location parameters - all must be provided together
-            if ((lat != null || lon != null || radius != null) &&
-                    !(lat != null && lon != null && radius != null)) {
-                return ResponseEntity.badRequest().body(null);
-            }
-
-            List<Donasi> results = donasiService.cariDonasi(kategori, lat, lon, radius);
-            return ResponseEntity.ok(results);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(null);
-=======
     // FR-06 & FR-08: List & Filter Donasi
     @GetMapping
     public ResponseEntity<List<Donasi>> listDonasi(
@@ -125,7 +105,6 @@ public class DonasiController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(List.of());
->>>>>>> Stashed changes
         }
     }
 
