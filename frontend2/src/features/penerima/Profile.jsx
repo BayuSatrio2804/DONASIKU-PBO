@@ -40,7 +40,7 @@ const ProfilePenerima = () => {
     if (!photoPath) return null;
     if (photoPath.startsWith('http') || photoPath.startsWith('data:')) return photoPath;
     // Sesuai logika Laravel: asset disimpan di storage/
-    return `http://localhost:8080/storage/${photoPath}`;
+    return `http://localhost:8081/storage/${photoPath}`;
   };
 
   const handleLogout = async () => {

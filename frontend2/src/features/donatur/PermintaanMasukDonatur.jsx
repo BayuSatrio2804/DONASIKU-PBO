@@ -168,8 +168,8 @@ const PermintaanMasukDonatur = () => {
                             : (p.donation?.image || p.image)?.startsWith('http')
                               ? (p.donation?.image || p.image)
                               : (p.donation?.image || p.image)?.startsWith('storage/')
-                                ? `http://localhost:8080/${p.donation?.image || p.image}`
-                                : `http://localhost:8080/storage/${p.donation?.image || p.image}`
+                                ? `http://localhost:8081/${p.donation?.image || p.image}`
+                                : `http://localhost:8081/storage/${p.donation?.image || p.image}`
                         }
                         alt={p.judul}
                         className="w-full h-full object-cover"
@@ -269,8 +269,8 @@ const PermintaanMasukDonatur = () => {
                         : (selectedPermintaan.donation?.image || selectedPermintaan.image).startsWith('http')
                           ? (selectedPermintaan.donation?.image || selectedPermintaan.image)
                           : (selectedPermintaan.donation?.image || selectedPermintaan.image).startsWith('storage/')
-                            ? `http://localhost:8080/${selectedPermintaan.donation?.image || selectedPermintaan.image}`
-                            : `http://localhost:8080/storage/${selectedPermintaan.donation?.image || selectedPermintaan.image}`
+                            ? `http://localhost:8081/${selectedPermintaan.donation?.image || selectedPermintaan.image}`
+                            : `http://localhost:8081/storage/${selectedPermintaan.donation?.image || selectedPermintaan.image}`
                     }
                     alt="Barang Donasi"
                     className="max-w-sm max-h-64 object-cover rounded-lg shadow-md border-2 border-blue-100"
@@ -358,8 +358,8 @@ const PermintaanMasukDonatur = () => {
                           : selectedPermintaan.image.startsWith('http')
                             ? selectedPermintaan.image
                             : selectedPermintaan.image.startsWith('storage/')
-                              ? `http://localhost:8080/${selectedPermintaan.image}`
-                              : `http://localhost:8080/storage/${selectedPermintaan.image}`
+                              ? `http://localhost:8081/${selectedPermintaan.image}`
+                              : `http://localhost:8081/storage/${selectedPermintaan.image}`
                       }
                       alt="Bukti Kebutuhan"
                       className="w-full max-h-96 object-contain rounded-xl shadow-inner bg-gray-100 border-2 border-dashed border-gray-200"

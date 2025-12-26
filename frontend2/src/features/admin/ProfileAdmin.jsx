@@ -47,7 +47,7 @@ const ProfileAdmin = () => {
                             <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-xl flex-shrink-0 overflow-hidden">
                                 {user.photo ? (
                                     <img
-                                        src={`http://localhost:8080/storage/${user.photo}`}
+                                        src={`http://localhost:8081/storage/${user.photo}`}
                                         alt="Profile"
                                         className="w-full h-full object-cover"
                                     />

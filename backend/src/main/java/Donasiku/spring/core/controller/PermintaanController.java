@@ -259,4 +259,45 @@ public class PermintaanController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
+
+    // FR-04, FR-05, FR-06: Filter permintaan donasi berdasarkan kategori dan lokasi
+    @GetMapping("/search/filtered")
+    public ResponseEntity<?> filterPermintaan(
+            @RequestParam(required = false) String kategori,
+            @RequestParam(required = false) String lokasi,
+            @RequestParam(required = false, defaultValue = "true") Boolean pendingOnly) {
+        try {
+            List<PermintaanDonasi> results = permintaanService.searchPermintaan(kategori, lokasi, pendingOnly);
+            return ResponseEntity.ok(new FilterResponse(
+                    true,
+                    "Ditemukan " + results.size() + " permintaan",
+                    results));
+        } catch (Exception e) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse(false, "Gagal filter permintaan: " + e.getMessage()));
+        }
+    }
+
+    // Response DTOs
+    static class FilterResponse {
+        public boolean success;
+        public String message;
+        public List<PermintaanDonasi> data;
+
+        public FilterResponse(boolean success, String message, List<PermintaanDonasi> data) {
+            this.success = success;
+            this.message = message;
+            this.data = data;
+        }
+    }
+
+    static class ErrorResponse {
+        public boolean success;
+        public String message;
+
+        public ErrorResponse(boolean success, String message) {
+            this.success = success;
+            this.message = message;
+        }
+    }
 }
