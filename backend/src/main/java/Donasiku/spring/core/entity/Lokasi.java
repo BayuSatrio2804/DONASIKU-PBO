@@ -9,13 +9,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
 
 @Entity
 @Table(name = "Lokasi")
-@Data
-@NoArgsConstructor
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Lokasi {
 
@@ -65,5 +62,80 @@ public class Lokasi {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         return R * c; // Jarak dalam Kilometer
+    }
+
+    public Lokasi() {
+    }
+
+    public Lokasi(Integer lokasiId, Double garisLintang, Double garisBujur, String alamatLengkap, TipeLokasi tipeLokasi) {
+        this.lokasiId = lokasiId;
+        this.garisLintang = garisLintang;
+        this.garisBujur = garisBujur;
+        this.alamatLengkap = alamatLengkap;
+        this.tipeLokasi = tipeLokasi;
+    }
+
+    public Integer getLokasiId() {
+        return lokasiId;
+    }
+
+    public void setLokasiId(Integer lokasiId) {
+        this.lokasiId = lokasiId;
+    }
+
+    public Double getGarisLintang() {
+        return garisLintang;
+    }
+
+    public void setGarisLintang(Double garisLintang) {
+        this.garisLintang = garisLintang;
+    }
+
+    public Double getGarisBujur() {
+        return garisBujur;
+    }
+
+    public void setGarisBujur(Double garisBujur) {
+        this.garisBujur = garisBujur;
+    }
+
+    public String getAlamatLengkap() {
+        return alamatLengkap;
+    }
+
+    public void setAlamatLengkap(String alamatLengkap) {
+        this.alamatLengkap = alamatLengkap;
+    }
+
+    public TipeLokasi getTipeLokasi() {
+        return tipeLokasi;
+    }
+
+    public void setTipeLokasi(TipeLokasi tipeLokasi) {
+        this.tipeLokasi = tipeLokasi;
+    }
+
+    @Override
+    public String toString() {
+        return "Lokasi{" +
+                "lokasiId=" + lokasiId +
+                ", garisLintang=" + garisLintang +
+                ", garisBujur=" + garisBujur +
+                ", alamatLengkap='" + alamatLengkap + '\'' +
+                ", tipeLokasi=" + tipeLokasi +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Lokasi lokasi = (Lokasi) o;
+        return java.util.Objects.equals(lokasiId, lokasi.lokasiId);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(lokasiId);
     }
 }

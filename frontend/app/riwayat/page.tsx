@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Message {
@@ -25,48 +25,13 @@ interface DonationItem {
   donorUsername: string;
   role: string;
   purpose: string;
-  itemName: string;
+  itemName: string; // Mapped from kategori
   quantity: number;
-  image: string;
-  status: 'selesai' | 'dikirim' | 'dibatalkan';
+  image: string; // Mapped from foto
+  status: string; // Flexible string to catch backend statuses
 }
 
-const donationData: DonationItem[] = [
-  {
-    id: 1,
-    donorName: 'Nama Pendonasi',
-    donorUsername: 'Zunadea Kusmiandita',
-    role: 'Donatur',
-    purpose: 'Panil Asuhan Al - Ghifari',
-    itemName: 'Tas Dewasa',
-    quantity: 1,
-    image: '👜',
-    status: 'selesai',
-  },
-  {
-    id: 2,
-    donorName: 'Nama Pendonasi',
-    donorUsername: 'Zunadea Kusmiandita',
-    role: 'Donatur',
-    purpose: 'Panil Asuhan Al - Ghifari',
-    itemName: 'Baju Dewasa Pria',
-    quantity: 1,
-    image: '👕',
-    status: 'dikirim',
-  },
-  {
-    id: 3,
-    donorName: 'Nama Pendonasi',
-    donorUsername: 'Zunadea Kusmiandita',
-    role: 'Donatur',
-    purpose: 'Panil Asuhan Al - Ghifari',
-    itemName: 'Baju Dewasa Pria',
-    quantity: 1,
-    image: '👕',
-    status: 'dibatalkan',
-  },
-];
-
+// CHAT DATA REMAINS DUMMY (for now as no backend chat endpoints were mentioned)
 const chatData: ChatItem[] = [
   {
     id: 1,
@@ -133,22 +98,28 @@ const chatData: ChatItem[] = [
   },
 ];
 
-const statusStyles = {
-  selesai: 'bg-green-100 text-green-800',
-  dikirim: 'bg-yellow-100 text-yellow-800',
-  dibatalkan: 'bg-red-100 text-red-800',
+const statusStyles: any = {
+  'Selesai': 'bg-green-100 text-green-800',
+  'Diterima': 'bg-green-100 text-green-800',
+  'Dikirim': 'bg-yellow-100 text-yellow-800',
+  'Menunggu Konfirmasi': 'bg-orange-100 text-orange-800',
+  'Dibatalkan': 'bg-red-100 text-red-800',
+  'Tersedia': 'bg-blue-100 text-blue-800',
 };
 
-const statusLabels = {
-  selesai: 'Selesai',
-  dikirim: 'Dikirim',
-  dibatalkan: 'Dibatalkan',
+const statusLabels: any = {
+  'Selesai': 'Selesai',
+  'Diterima': 'Diterima',
+  'Dikirim': 'Dikirim',
+  'Menunggu Konfirmasi': 'Menunggu Konfirmasi',
+  'Dibatalkan': 'Dibatalkan',
+  'Tersedia': 'Tersedia',
 };
 
 export default function RiwayatPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('barang');
-  const [donations, setDonations] = useState<DonationItem[]>(donationData);
+  const [donations, setDonations] = useState<DonationItem[]>([]);
   const [chats] = useState<ChatItem[]>(chatData);
   const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -156,7 +127,66 @@ export default function RiwayatPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedDonation, setSelectedDonation] = useState<DonationItem | null>(null);
-  const [newStatus, setNewStatus] = useState<'selesai' | 'dikirim' | 'dibatalkan' | ''>('');
+  const [newStatus, setNewStatus] = useState<string>('');
+  const [user, setUser] = useState<{ username: string, role: string, userId?: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const sessionStr = localStorage.getItem('userSession');
+    if (sessionStr) {
+      try {
+        const userData = JSON.parse(sessionStr);
+        setUser(userData);
+        fetchDonations(userData.userId);
+      } catch (e) {
+        console.error("Invalid session", e);
+        setLoading(false);
+      }
+    } else {
+      router.push('/auth/login');
+    }
+  }, [router]);
+
+  const fetchDonations = async (userId: number) => {
+    try {
+      const response = await fetch('http://localhost:8080/api/donasi');
+      if (response.ok) {
+        const data = await response.json();
+
+        // Filter donasi milik user yang sedang login
+        // Jika role DONATUR -> donatur.userId === myId
+        // Jika role PENERIMA -> penerima.userId === myId (untuk barang yang diterima)
+
+        let myDonations = data.filter((d: any) => {
+          // Asumsi login sebagai DONATUR untuk "Riwayat Barang" yang didonasikan
+          // Atau jika user adalah penerima yang melihat riwayat barang yang diterima
+          // Logic: Tampilkan semua interaksi user
+          const isMyDonation = Number(d.donatur?.userId) === Number(userId);
+          const isMyReceipt = Number(d.penerima?.userId) === Number(userId);
+          return isMyDonation || isMyReceipt;
+        });
+
+        // Mapping ke UI Model
+        const mappedData: DonationItem[] = myDonations.map((d: any) => ({
+          id: d.donasiId,
+          donorName: d.donatur?.nama || 'Unknown',
+          donorUsername: d.donatur?.username || 'Unknown',
+          role: 'Donatur', // Static for now, or derive from backend
+          purpose: d.penerima?.nama || d.penerima?.username || 'Belum ada penerima',
+          itemName: d.kategori || 'Barang Donasi', // Fallback
+          quantity: d.jumlah || 1,
+          image: d.foto ? `http://localhost:8080/uploads/${d.foto}` : '📦',
+          status: d.statusDonasi?.status || 'Unknown'
+        }));
+
+        setDonations(mappedData);
+      }
+    } catch (err) {
+      console.error("Error fetching data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChatClick = (chat: ChatItem) => {
     setSelectedChat(chat);
@@ -192,21 +222,30 @@ export default function RiwayatPage() {
   };
 
   const handleUpdateStatus = async () => {
-    if (!selectedDonation || !newStatus) return;
+    if (!selectedDonation || !newStatus || !user?.userId) return;
 
-    // Update local state
-    setDonations(donations.map(d => 
-      d.id === selectedDonation.id 
-        ? { ...d, status: newStatus as 'selesai' | 'dikirim' | 'dibatalkan' }
-        : d
-    ));
+    try {
+      const response = await fetch(`http://localhost:8080/api/donasi/${selectedDonation.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statusBaru: newStatus, userId: user.userId })
+      });
 
-    // TODO: POST ke backend
-    // const response = await fetch(`http://localhost:8080/api/donasi/${selectedDonation.id}/status`, {
-    //   method: 'PUT',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ status: newStatus })
-    // });
+      if (response.ok) {
+        alert("Status berhasil diperbarui!");
+        // Update local state
+        setDonations(donations.map(d =>
+          d.id === selectedDonation.id
+            ? { ...d, status: newStatus }
+            : d
+        ));
+      } else {
+        alert("Gagal memperbarui status via server");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error connection");
+    }
 
     setShowStatusModal(false);
     setSelectedDonation(null);
@@ -216,6 +255,8 @@ export default function RiwayatPage() {
   const filteredChats = chats.filter((chat) =>
     chat.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50">Loading Data...</div>;
 
   if (selectedChat) {
     return (
@@ -255,15 +296,15 @@ export default function RiwayatPage() {
                 )}
                 <div
                   className={`rounded-2xl px-4 py-2 ${message.sender === 'user'
-                      ? 'bg-primary text-white'
-                      : 'bg-gray-200 text-gray-900'
+                    ? 'bg-primary text-white'
+                    : 'bg-gray-200 text-gray-900'
                     }`}
                 >
                   <p className="text-sm">{message.text}</p>
                   <p
                     className={`text-xs mt-1 ${message.sender === 'user'
-                        ? 'text-blue-100'
-                        : 'text-gray-600'
+                      ? 'text-blue-100'
+                      : 'text-gray-600'
                       }`}
                   >
                     {message.time}{' '}
@@ -309,7 +350,7 @@ export default function RiwayatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 py-4 px-4 flex items-center gap-4 sticky top-0 z-10">
         <button
@@ -318,16 +359,17 @@ export default function RiwayatPage() {
         >
           &lt;
         </button>
+        <h1 className="text-xl font-bold">Riwayat</h1>
       </div>
 
       {/* Tabs - Styled like design */}
-      <div className="bg-white py-4 px-4 flex justify-center sticky top-16 z-10">
+      <div className="bg-white py-4 px-4 flex justify-center sticky top-16 z-10 shadow-sm mb-4">
         <div className="inline-flex bg-white rounded-full p-1 border border-gray-300 gap-2">
           <button
             onClick={() => setActiveTab('barang')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${activeTab === 'barang'
-                ? 'bg-primary text-white'
-                : 'text-gray-700 hover:text-gray-900'
+              ? 'bg-primary text-white'
+              : 'text-gray-700 hover:text-gray-900'
               }`}
           >
             Riwayat Barang
@@ -335,8 +377,8 @@ export default function RiwayatPage() {
           <button
             onClick={() => setActiveTab('chat')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${activeTab === 'chat'
-                ? 'bg-primary text-white'
-                : 'text-gray-700 hover:text-gray-900'
+              ? 'bg-primary text-white'
+              : 'text-gray-700 hover:text-gray-900'
               }`}
           >
             Riwayat Chat
@@ -345,75 +387,86 @@ export default function RiwayatPage() {
       </div>
 
       {/* Content */}
-      <div className="px-4 py-6">
+      <div className="px-4 py-2">
         {activeTab === 'barang' && (
           <div className="space-y-4 max-w-2xl mx-auto">
-            {donations.map((donation) => (
-              <div
-                key={donation.id}
-                className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex gap-4">
-                  {/* Left Section - Donor Info */}
-                  <div className="flex gap-3 flex-1">
-                    <div className="w-12 h-12 rounded-full bg-orange-400 flex items-center justify-center text-xl shrink-0">
-                      👨‍💼
+            {donations.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-gray-500">Belum ada riwayat donasi.</p>
+              </div>
+            ) : (
+              donations.map((donation) => (
+                <div
+                  key={donation.id}
+                  className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="flex gap-4">
+                    {/* Left Section - Donor Info */}
+                    <div className="flex gap-3 flex-1">
+                      <div className="w-12 h-12 rounded-full bg-orange-400 flex items-center justify-center text-xl shrink-0">
+                        👨‍💼
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900">
+                          {donation.donorName}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          {donation.donorUsername}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Role Akun
+                        </p>
+                        <p className="text-sm text-gray-700">
+                          {donation.role}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          Tujuan Donasi
+                        </p>
+                        <p className="text-sm text-gray-700">
+                          {donation.purpose}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">
-                        {donation.donorName}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {donation.donorUsername}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Role Akun
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        {donation.role}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        Tujuan Donasi
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        {donation.purpose}
-                      </p>
-                    </div>
-                  </div>
 
-                  {/* Right Section - Item Info & Status */}
-                  <div className="flex flex-col items-end gap-3">
-                    <div
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyles[donation.status]
-                        }`}
-                    >
-                      {statusLabels[donation.status]}
-                    </div>
-                    <div className="text-center">
-                      <p className="text-4xl mb-2">{donation.image}</p>
-                      <p className="text-xs text-gray-500 mb-1">
-                        Nama Barang
-                      </p>
-                      <p className="text-sm font-medium text-gray-900">
-                        {donation.itemName}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Jumlah Barang
-                      </p>
-                      <p className="text-sm font-medium text-gray-900">
-                        {donation.quantity} Pcs
-                      </p>
-                      <button
-                        onClick={() => handleOpenStatusModal(donation)}
-                        className="mt-4 bg-primary text-white text-xs px-4 py-2 rounded-full hover:opacity-90 transition-opacity"
+                    {/* Right Section - Item Info & Status */}
+                    <div className="flex flex-col items-end gap-3">
+                      <div
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyles[donation.status] || 'bg-gray-100'
+                          }`}
                       >
-                        Update Status
-                      </button>
+                        {statusLabels[donation.status] || donation.status}
+                      </div>
+                      <div className="text-center flex flex-col items-center">
+                        {donation.image.startsWith('http') ? (
+                          <img src={donation.image} alt={donation.itemName} className="w-20 h-20 object-cover rounded-lg mb-2" />
+                        ) : (
+                          <p className="text-4xl mb-2">{donation.image}</p>
+                        )}
+
+                        <p className="text-xs text-gray-500 mb-1">
+                          Nama Barang
+                        </p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {donation.itemName}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Jumlah Barang
+                        </p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {donation.quantity} Pcs
+                        </p>
+                        <button
+                          onClick={() => handleOpenStatusModal(donation)}
+                          className="mt-4 bg-primary text-white text-xs px-4 py-2 rounded-full hover:opacity-90 transition-opacity"
+                        >
+                          Update Status
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
 
@@ -472,7 +525,7 @@ export default function RiwayatPage() {
       {/* Status Update Modal */}
       {showStatusModal && selectedDonation && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 max-w-sm mx-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm mx-4 w-full">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Update Status Donasi
             </h2>
@@ -481,7 +534,7 @@ export default function RiwayatPage() {
             </p>
 
             <div className="space-y-3 mb-6">
-              {(['dikirim', 'selesai', 'dibatalkan'] as const).map((status) => (
+              {(['Dikirim', 'Selesai', 'Dibatalkan'] as const).map((status) => (
                 <label
                   key={status}
                   className="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-colors"
@@ -495,13 +548,13 @@ export default function RiwayatPage() {
                     name="status"
                     value={status}
                     checked={newStatus === status}
-                    onChange={(e) => setNewStatus(e.target.value as any)}
+                    onChange={(e) => setNewStatus(e.target.value)}
                     className="w-4 h-4"
                   />
                   <span className="text-sm font-medium text-gray-900 capitalize">
                     {statusLabels[status]}
                   </span>
-                  <span className={`ml-auto text-xs px-2 py-1 rounded-full ${statusStyles[status]}`}>
+                  <span className={`ml-auto text-xs px-2 py-1 rounded-full ${statusStyles[status] || 'bg-gray-100'}`}>
                     {statusLabels[status]}
                   </span>
                 </label>

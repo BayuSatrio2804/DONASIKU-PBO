@@ -6,32 +6,7 @@ import Image from 'next/image';
 
 const categories = ['All', 'Komunitas', 'Panti Asuhan', 'Panti Jompo'];
 
-const requestItems = [
-  {
-    id: 1,
-    title: 'Pakaian Anak',
-    penerima: 'Panti Asuhan Ceria Bandung',
-    kategori: 'Panti Asuhan',
-    lokasi: 'JL. Pandjaitan Bandung',
-    image: '/dummy/dinsos.png',
-  },
-  {
-    id: 2,
-    title: 'Sepatu Anak',
-    penerima: 'Komunitas Peduli Anak',
-    kategori: 'Komunitas',
-    lokasi: 'Antapani',
-    image: '/dummy/dinsos.png',
-  },
-  {
-    id: 3,
-    title: 'Selimut Lansia',
-    penerima: 'Panti Jompo Sejahtera',
-    kategori: 'Panti Jompo',
-    lokasi: 'Cicaheum',
-    image: '/dummy/dinsos.png',
-  },
-];
+const requestItems: any[] = [];
 
 export default function PermintaanBarangPage() {
   const router = useRouter();
@@ -84,11 +59,10 @@ export default function PermintaanBarangPage() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full text-sm border whitespace-nowrap ${
-                activeCategory === cat
+              className={`px-4 py-2 rounded-full text-sm border whitespace-nowrap ${activeCategory === cat
                   ? 'bg-black text-white'
                   : 'bg-white text-gray-600'
-              }`}
+                }`}
             >
               {cat}
             </button>
