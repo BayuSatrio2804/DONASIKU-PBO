@@ -1,123 +1,99 @@
-# 📄 Laporan Pengembangan Sistem Donasiku (Branch: `nauval-v1`)
+# 📄 Laporan Teknis Pengembangan Sistem Donasiku
 
-**Pengembang:** Nauval  
-**Tanggal Update:** 26 Desember 2025  
-**Status Branch:** `nauval-v1` (Active & Tested)
-
----
-
-## 🌟 Ringkasan Eksekutif
-Dokumen ini merangkum implementasi fitur-fitur kunci dalam sistem **Donasiku**, khususnya yang berkaitan dengan manajemen donasi, permintaan bantuan, dan alur pemenuhan kebutuhan (fulfillment) antara Donatur dan Penerima. Fokus utama pengembangan ini adalah menciptakan siklus donasi yang transparan, fleksibel (mendukung donasi sebagian), dan mudah dikelola.
+**Branch:** `nauval-v1`  
+**Developer:** Nauval  
+**Tanggal:** 26 Desember 2025
 
 ---
 
-## 🛠️ Detail Implementasi Fitur (Functional Requirements)
+## 1. Spesifikasi Fungsional & Logika Bisnis
+Fitur utama yang dikembangkan adalah **Siklus Hidup Donasi (Donation Lifecycle)** dengan fokus pada fleksibilitas pemenuhan kebutuhan.
 
-### 1. FR-03: Donasi & Partial Fulfillment (Pemenuhan Sebagian)
-**Tujuan:** Memberikan fleksibilitas kepada donatur untuk memenuhi permintaan bantuan baik secara penuh maupun sebagian.
-
-*   **Masalah Sebelumnya:** Permintaan akan hilang (terhapus/tertutup) jika dipenuhi, meskipun jumlah donasi kurang dari permintaan.
-*   **Solusi:** Implementasi logika **"Split Request"**.
-*   **Alur Teknis:**
-    1.  Jika Donatur memberikan `jumlah < permintaan`:
-        *   Sistem membuat **Permintaan Baru** (Status: `Approved`) dengan jumlah sesuai donasi.
-        *   Sistem memperbarui **Permintaan Lama** (Status: `Open/Pending`) dengan sisa jumlah (`original - donation`).
-    2.  Jika Donatur memberikan `jumlah == permintaan`:
-        *   Permintaan langsung diubah statusnya menjadi `Approved`.
-*   **Komponen Terupdate:**
-    *   **Backend:** `PermintaanService.java` (Logic split), `PermintaanController.java` (API Endpoint support Multipart).
-    *   **Frontend:** `FulfillmentModal.jsx` (Form Donasi dengan bukti & jumlah), `permintaanService.js` (FormData handling).
-
-### 2. FR-08: Manajemen Permintaan (CRUD Penerima)
-**Tujuan:** Memberikan kontrol penuh kepada penerima atas permohonan bantuan yang mereka ajukan.
-
-*   **Fitur Baru:**
-    *   **Edit Permintaan:** Penerima bisa mengubah Judul, Deskripsi, Jumlah, dan Foto Bukti selama status masih `Pending`.
-    *   **Batalkan Permintaan (Soft Delete):** Penerima bisa membatalkan permintaan. Data tidak dihapus permanen tetapi status berubah menjadi `Cancelled` demi integritas data riwayat.
-*   **Komponen Terupdate:**
-    *   **Frontend:** `PermintaanSaya.jsx` (UI List & Edit Modal yang responsif).
-    *   **Validasi:** Mencegah edit pada permintaan yang sudah disetujui/diproses.
-
-### 3. FR-14: Update Status "Dikirim" (Donatur)
-**Tujuan:** Memberikan transparansi kepada penerima bahwa barang sedang dalam perjalanan.
-
-*   **Alur:**
-    1.  Donatur membuka Dashboard / Riwayat.
-    2.  Pada item status `Approved` (Disiapkan), klik tombol **"Konfirmasi Barang Dikirim"**.
-    3.  Status berubah menjadi `Sent` (Dikirim 🚚).
-*   **Dampak:** Penerima mendapatkan notifikasi visual di dashboard mereka.
-
-### 4. FR-15: Konfirmasi "Diterima" (Penerima)
-**Tujuan:** Menutup siklus transaksi donasi dengan konfirmasi penerimaan fisik barang.
-
-*   **Alur:**
-    1.  Penerima menerima barang fisik.
-    2.  Login ke Dashboard Penerima -> Riwayat / Permintaan Saya.
-    3.  Klik tombol **"Konfirmasi Barang Diterima"**.
-    4.  Status berubah menjadi `Received` (Diterima ✅).
-*   **Validasi Database:** Data pada tabel `permintaan_donasi` kolom `status` bernilai `received`.
+### 🧩 Fitur Unggulan: Partial Fulfillment (Donasi Sebagian)
+Secara tradisional, sistem donasi bersifat "All-or-Nothing". Fitur ini memungkinkan donasi bersifat cair.
+*   **Masalah:** Penerima butuh 10kg beras, Donatur A hanya punya 4kg. Jika Donatur A memberi, permintaan tersisa 6kg seringkali hilang atau tertutup otomatis.
+*   **Solusi Algoritmik:**
+    1.  Sistem menerima input jumlah donasi.
+    2.  Jika `Input < Target`, sistem memicu logic **Split Object**.
+    3.  Terbentuk dua entitas:
+        *   **Entitas A (Parent):** Tetap hidup dengan sisa target (6kg). Status: *Pending*.
+        *   **Entitas B (Child):** Terbentuk baru dengan jumlah donasi (4kg). Status: *Approved*.
+*   **Dampak:** Fleksibilitas maksimal bagi donatur dan kepastian bagi penerima.
 
 ---
 
-## 📊 Arsitektur & Alur Data (ERD Flow)
+## 2. Implementasi CRUD & State Management
+Pengelolaan data dilakukan dengan pendekatan yang menjaga integritas referensi (Referential Integrity).
 
-Sistem ini didukung oleh relasi entitas yang kuat untuk memastikan integritas data.
+### 📝 Read & Update
+*   **Mekanisme:** Menggunakan `PermintaanService` untuk memanipulasi atribut objek.
+*   **Validasi:** Setiap operasi Update diverifikasi terhadap Status saat ini. Permintaan yang sudah *Approved* dikunci (Locked) dari perubahan untuk mencegah inkonsistensi data transaksi.
 
-### Entitas Utama
-1.  **Users**: Tabel induk untuk semua aktor (Role: `donatur`, `penerima`).
-2.  **Donasi**: Barang yang ditawarkan oleh donatur (Stok awal).
-3.  **PermintaanDonasi**: Tabel transaksi utama yang menghubungkan Penerima dan Donatur.
-
-### Skenario Alur Data
-**Kasus: Penerima Meminta Bantuan (Open Request)**
-
-1.  **Initiation (Penerima)**
-    *   Input: "Butuh Selimut 5 Pcs"
-    *   DB: Insert ke `PermintaanDonasi` (Status: `Pending`, Penerima: `ID_Penerima`).
-
-2.  **Discovery (Donatur)**
-    *   Donatur melihat list di `DashboardDonatur`.
-    *   Action: Klik "Penuhi", input "2 Pcs".
-
-3.  **Processing (Sistem Backend)**
-    *   **Langkah A:** Update Permintaan Asli -> Jumlah jadi 3 (5-2). Status tetap `Pending`.
-    *   **Langkah B:** Insert Permintaan Baru -> Jumlah 2. Status `Approved`. Donatur: `ID_Donatur`.
-
-4.  **Completion (Flow FR-14 & FR-15)**
-    *   Donatur update status -> `Sent`.
-    *   Penerima konfirmasi -> `Received`.
-    *   **Final State:** 1 Record `Pending` (Sisa 3), 1 Record `Received` (Selesai 2).
+### 🗑️ Soft Delete (Pembatalan Aman)
+*   **Konsep:** Menghapus data secara fisik (`DELETE FROM...`) sangat berbahaya dalam sistem yang mencatat riwayat kebaikan.
+*   **Implementasi:** Kami menggunakan teknik **Soft Delete**.
+*   **Teknis:** Method `cancelPermintaan` tidak memanggil fungsi delete repository, melainkan mengubah atribut `status` menjadi `'Cancelled'`. Data tetap ada untuk audit log, namun tidak muncul di feed aktif.
 
 ---
 
-## 🧪 Panduan Pengujian (Testing Guide)
+## 3. Penerapan OOP: Inheritance (Pewarisan)
+Pewarisan digunakan untuk efisiensi kode dan standarisasi akses data.
 
-Untuk memverifikasi fitur-fitur ini berjalan dengan baik, silakan ikuti langkah berikut:
-
-### Skenario Uji: Donasi Sebagian
-1.  **Login Penerima**: Buat permintaan baru (Misal: "Beras", Jumlah: 10 Kg).
-2.  **Login Donatur**:
-    *   Buka Dashboard -> "Permintaan Penerima".
-    *   Pilih permintaan "Beras" tadi.
-    *   Masukkan jumlah donasi: **4 Kg**.
-    *   Upload foto bukti -> Kirim.
-3.  **Verifikasi (Penerima)**:
-    *   Cek "Permintaan Saya".
-    *   Harus ada 2 item:
-        *   Satu item dengan sisa **6 Kg** (Status: Menunggu).
-        *   Satu item baru **4 Kg** (Status: Disiapkan).
-4.  **Penyelesaian**:
-    *   (Donatur) Klik "Barang Dikirim".
-    *   (Penerima) Klik "Diterima".
-    *   Pastikan status akhir item 4 Kg adalah "Diterima ✅".
+### 🧬 Repository Pattern
+*   **Implementasi:** Interface `PermintaanDonasiRepository` mewarisi (`extends`) `JpaRepository`.
+*   **Keuntungan Teknis:**
+    *   Kami tidak perlu menulis manual query SQL dasar (`INSERT`, `UPDATE`, `SELECT`).
+    *   Mewarisi kemampuan Pagination dan Sorting otomatis dari *Spring Data Commons*.
+    *   Menciptakan standarisasi naming convention (contoh: `findByStatus(...)` otomatis diterjemahkan menjadi query SQL yang valid).
 
 ---
 
-## � Stack Teknologi
-*   **Backend**: Java Spring Boot 3 + JPA (Hibernate)
-*   **Database**: MySQL
-*   **Frontend**: React.js + Tailwind CSS
-*   **Testing**: Manual Testing & JUnit (Backend)
+## 4. Keamanan Akses (Role Access & Encapsulation)
+Keamanan data diterapkan menggunakan prinsip Enkapsulasi OOP.
+
+### 🛡️ Role Validation
+*   **Logic:** Service layer bertindak sebagai "Gatekeeper". Sebelum operasi tulis dilakukan, sistem memvalidasi kepemilikan.
+*   **Code Flow:**
+    `Request masuk -> Cek ID User di Session -> Bandingkan dengan ID Pemilik Data -> Jika beda, Lempar Exception.`
+*   **Encapsulation:** Atribut kritis seperti `userId` atau `status` diset `private` dalam Entity dan hanya bisa dimutasi melalui method Service yang tervalidasi, bukan diakses langsung dari Controller.
 
 ---
-*Dokumen ini dibuat otomatis sebagai bagian dari dokumentasi pengembangan fitur branch `nauval-v1`.*
+
+## 5. Exception Handling (Manajemen Error)
+Aplikasi dibangun agar *Fault Tolerant* dan memberikan feedback yang jelas.
+
+### ⚠️ Runtime Exception
+*   **Strategi:** Kami menggunakan `RuntimeException` untuk menangkap kesalahan logika bisnis (Logical Error), bukan hanya kesalahan teknis.
+*   **Skenario:**
+    *   *Input Negatif:* Donasi jumlah < 0.
+    *   *Over-donation:* Donasi > Sisa Kebutuhan.
+    *   *Invalid State Transition:* Mencoba mengirim barang yang statsunya belum disetujui.
+*   **Output:** Exception ini ditangkap oleh Global Error Handler dan dikembalikan ke Frontend sebagai pesan error yang manusiawi (User Friendly).
+
+---
+
+## 6. Arsitektur MVC (Model-View-Controller)
+Sistem ini memisahkan tanggung jawab (Separation of Concerns) secara tegas.
+
+1.  **Model (Entity):**
+    *   Class `PermintaanDonasi.java`. Merepresentasikan struktur tabel database. Tidak mengandung logic bisnis, hanya struktur data.
+2.  **View (Frontend):**
+    *   Aplikasi React.js. Hanya bertugas menampilkan data JSON. Tidak tahu menahu soal query database.
+3.  **Controller (API Layer):**
+    *   Class `PermintaanController.java`. Pintu gerbang HTTP. Menerima Request, memanggil Service, dan mengembalikan Response.
+4.  **Service (Business Layer):**
+    *   Class `PermintaanService.java`. "Otak" aplikasi. Semua logic CRUD, validasi, dan transaksi terjadi di sini.
+
+---
+
+## 7. Interface & Polymorphism
+Sistem dirancang untuk *Loose Coupling* (ketergantungan rendah).
+
+### 🎭 Interface Driven Development
+*   **Implementasi:** Seluruh komunikasi ke database dilakukan melalui **Interface** (`PermintaanDonasiRepository`), bukan Class Konkret.
+*   **Polimorfisme:**
+    *   Spring Boot menyuntikkan (Dependency Injection) implementasi konkret (Proxy) saat runtime.
+    *   Ini memungkinkan kita mengganti implementasi database di masa depan tanpa harus merombak kode logika di Service.
+
+---
+*Dokumen ini disusun sebagai dokumentasi teknis mendalam untuk pengembangan fitur branch `nauval-v1`.*
