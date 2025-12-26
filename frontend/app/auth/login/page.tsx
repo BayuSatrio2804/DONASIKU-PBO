@@ -47,12 +47,14 @@ export default function LoginPage() {
       // Data dari backend sekarang: 
       // { success: true, message: "...", username, userId, email, role: "DONATUR"/"PENERIMA" }
 
+=======
       const userRole = data.role ? data.role.toLowerCase() : 'donatur';
 
       // Validate Role
       if (userRole !== selectedRole) {
         throw new Error('Akun tidak sesuai. Silakan login sebagai ' + (userRole === 'donatur' ? 'Donatur' : 'Penerima'));
       }
+
 
       const sessionData = {
         username: data.username,

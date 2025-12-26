@@ -1,11 +1,16 @@
 package Donasiku.spring.core.service;
 
 import Donasiku.spring.core.entity.User;
+import Donasiku.spring.core.entity.Donasi;
 import Donasiku.spring.core.repository.UserRepository;
+import Donasiku.spring.core.repository.DonasiRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -14,6 +19,37 @@ public class UserService {
     private UserRepository userRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private DonasiRepository donasiRepository;
+
+    @Transactional
+    public void editProfilWithPhoto(Integer userId, User updatedData,
+            org.springframework.web.multipart.MultipartFile file) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
+
+        if (updatedData.getNama() != null)
+            user.setNama(updatedData.getNama());
+        if (updatedData.getNoTelepon() != null)
+            user.setNoTelepon(updatedData.getNoTelepon());
+        if (updatedData.getEmail() != null)
+            user.setEmail(updatedData.getEmail());
+        // Add other fields if necessary
+
+        if (file != null && !file.isEmpty()) {
+            try {
+                String fileName = System.currentTimeMillis() + "_profile_" + file.getOriginalFilename();
+                java.nio.file.Path path = java.nio.file.Paths.get("uploads/" + fileName);
+                java.nio.file.Files.createDirectories(path.getParent());
+                java.nio.file.Files.write(path, file.getBytes());
+                user.setFotoProfil(fileName);
+            } catch (java.io.IOException e) {
+                throw new RuntimeException("Gagal menyimpan foto: " + e.getMessage());
+            }
+        }
+
+        userRepository.save(user);
+    }
 
     @Transactional
     public void editProfil(Integer userId, User updatedData) {
@@ -40,5 +76,17 @@ public class UserService {
     public User getProfil(Integer userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
+    }
+
+    // --- Class Diagram: lihatRiwayat() ---
+    public List<Donasi> getRiwayatDonasi(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
+
+        // Return donations where user is penerima (received items)
+        return donasiRepository.findAll().stream()
+                .filter(d -> d.getPenerima() != null &&
+                        d.getPenerima().getUserId().equals(userId))
+                .collect(Collectors.toList());
     }
 }

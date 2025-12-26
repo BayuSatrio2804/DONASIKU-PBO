@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "Status_Donasi")
 @Data
 @NoArgsConstructor
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class StatusDonasi {
 
     @Id
