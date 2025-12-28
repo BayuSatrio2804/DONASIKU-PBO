@@ -19,7 +19,9 @@ const VerifikasiPenerima = () => {
     const loadPendingUsers = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/users/penerima/pending');
+            const user = JSON.parse(localStorage.getItem('user'));
+            const adminId = user?.userId || user?.id;
+            const response = await api.get('/users/penerima/pending', { params: { adminId } });
             const data = Array.isArray(response.data) ? response.data : [];
             setPendingUsers(data);
         } catch (error) {
@@ -41,7 +43,9 @@ const VerifikasiPenerima = () => {
         if (result.isConfirmed) {
             try {
                 setProcessing(userId);
-                await api.post(`/users/${userId}/verify`);
+                const user = JSON.parse(localStorage.getItem('user'));
+                const adminId = user?.userId || user?.id;
+                await api.post(`/users/${userId}/verify?adminId=${adminId}`);
                 showSuccess('Berhasil', 'Penerima berhasil diverifikasi');
                 loadPendingUsers();
                 setShowDocModal(false);
@@ -64,7 +68,9 @@ const VerifikasiPenerima = () => {
         if (result.isConfirmed) {
             try {
                 setProcessing(userId);
-                await api.post(`/users/${userId}/reject`);
+                const user = JSON.parse(localStorage.getItem('user'));
+                const adminId = user?.userId || user?.id;
+                await api.post(`/users/${userId}/reject?adminId=${adminId}`);
                 showSuccess('Berhasil', 'Penerima berhasil ditolak');
                 loadPendingUsers();
                 setShowDocModal(false);

@@ -18,7 +18,9 @@ const KelolaUser = () => {
     const loadUsers = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/users');
+            const user = JSON.parse(localStorage.getItem('user'));
+            const adminId = user?.userId || user?.id;
+            const response = await api.get('/users', { params: { adminId } });
             // Handle both array and object response
             const data = Array.isArray(response.data) ? response.data : (response.data?.data || []);
             setUsers(data);
@@ -31,6 +33,9 @@ const KelolaUser = () => {
     };
 
     const filteredUsers = users.filter(user => {
+        // Hide admins from this list
+        if (user.role?.toLowerCase() === 'admin') return false;
+
         const matchesRole = filter === 'semua' || user.role?.toLowerCase() === filter;
         const searchStr = searchTerm.toLowerCase();
         const matchesSearch =
@@ -85,7 +90,7 @@ const KelolaUser = () => {
 
             {/* Filter Tabs */}
             <div className="flex flex-wrap gap-2 mb-6">
-                {['semua', 'donatur', 'penerima', 'admin'].map(role => (
+                {['semua', 'donatur', 'penerima'].map(role => (
                     <button
                         key={role}
                         onClick={() => setFilter(role)}
