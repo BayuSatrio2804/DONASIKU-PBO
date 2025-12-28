@@ -26,7 +26,15 @@ public class UserController {
 
     // Admin: Get All Users
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
+    public ResponseEntity<?> getAllUsers(@RequestParam("adminId") Integer adminId) {
+        // Validasi Admin
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(
+                        () -> new Donasiku.spring.core.exception.ResourceNotFoundException("Admin tidak ditemukan"));
+        if (admin.getRole() != User.UserRole.admin) {
+            return ResponseEntity.status(403).body("Akses ditolak: Hanya Admin yang diizinkan.");
+        }
+
         List<User> users = userRepository.findAll();
         return ResponseEntity.ok(users);
     }
@@ -170,7 +178,15 @@ public class UserController {
 
     // FR-16: Admin - Get Penerima Pending Verification
     @GetMapping("/penerima/pending")
-    public ResponseEntity<List<User>> getPendingPenerima() {
+    public ResponseEntity<?> getPendingPenerima(@RequestParam("adminId") Integer adminId) {
+        // Validasi Admin
+        User admin = userRepository.findById(adminId)
+                .orElseThrow(
+                        () -> new Donasiku.spring.core.exception.ResourceNotFoundException("Admin tidak ditemukan"));
+        if (admin.getRole() != User.UserRole.admin) {
+            return ResponseEntity.status(403).body("Akses ditolak: Hanya Admin yang diizinkan.");
+        }
+
         List<User> users = userRepository.findAll().stream()
                 .filter(u -> u.getRole() == User.UserRole.penerima &&
                         (u.getIsVerified() == null || !u.getIsVerified()) &&
@@ -181,8 +197,16 @@ public class UserController {
 
     // FR-16: Admin - Verify Penerima
     @PostMapping("/{id}/verify")
-    public ResponseEntity<?> verifyUser(@PathVariable("id") Integer userId) {
+    public ResponseEntity<?> verifyUser(@PathVariable("id") Integer userId, @RequestParam("adminId") Integer adminId) {
         try {
+            // Validasi Admin
+            User admin = userRepository.findById(adminId)
+                    .orElseThrow(() -> new Donasiku.spring.core.exception.ResourceNotFoundException(
+                            "Admin tidak ditemukan"));
+            if (admin.getRole() != User.UserRole.admin) {
+                return ResponseEntity.status(403).body("Akses ditolak: Hanya Admin yang diizinkan.");
+            }
+
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
 
@@ -217,8 +241,15 @@ public class UserController {
 
     // FR-16: Admin - Reject Penerima Verification
     @PostMapping("/{id}/reject")
-    public ResponseEntity<?> rejectUser(@PathVariable("id") Integer userId) {
+    public ResponseEntity<?> rejectUser(@PathVariable("id") Integer userId, @RequestParam("adminId") Integer adminId) {
         try {
+            // Validasi Admin
+            User admin = userRepository.findById(adminId)
+                    .orElseThrow(() -> new RuntimeException("Admin tidak ditemukan"));
+            if (admin.getRole() != User.UserRole.admin) {
+                return ResponseEntity.status(403).body("Akses ditolak: Hanya Admin yang diizinkan.");
+            }
+
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User tidak ditemukan"));
 

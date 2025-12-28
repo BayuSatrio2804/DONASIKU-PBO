@@ -21,11 +21,12 @@ const DashboardAdmin = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const adminId = user?.userId || user?.id;
                 const [donasiRes, usersRes, permintaanRes, pendingRes] = await Promise.allSettled([
                     donationAPI.getAll(),
-                    api.get('/users'),
+                    api.get('/users', { params: { adminId } }),
                     api.get('/permintaan'),
-                    api.get('/users/penerima/pending')
+                    api.get('/users/penerima/pending', { params: { adminId } })
                 ]);
 
                 setStats({
