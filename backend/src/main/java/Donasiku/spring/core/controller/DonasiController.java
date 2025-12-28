@@ -118,7 +118,8 @@ public class DonasiController {
         }
     }
 
-    // FR-04, FR-05, FR-06: Advanced filter by category and location with available status
+    // FR-04, FR-05, FR-06: Advanced filter by category and location with available
+    // status
     @GetMapping("/search/filtered")
     public ResponseEntity<?> filterDonasi(
             @RequestParam(required = false) String kategori,
@@ -210,6 +211,16 @@ public class DonasiController {
             return ResponseEntity.status(404).body("Error: Donasi tidak ditemukan - " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: Gagal memperbarui donasi - " + e.getMessage());
+        }
+    }
+
+    static class ErrorResponse {
+        public boolean success;
+        public String message;
+
+        public ErrorResponse(boolean success, String message) {
+            this.success = success;
+            this.message = message;
         }
     }
 }
