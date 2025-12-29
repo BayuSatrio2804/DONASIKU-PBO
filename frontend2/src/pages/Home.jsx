@@ -6,7 +6,7 @@ const Home = () => {
     return (
         <div className="font-sans">
             {/* Hero Section */}
-            <div className="bg-gradient-to-br from-[#00306C] via-[#0063FF] to-[#007EFF] text-white min-h-[90vh] flex items-center relative overflow-hidden">
+            <div className="bg-gradient-to-br from-[#00306C] via-[#0063FF] to-[#007EFF] text-white min-h-screen flex items-center relative overflow-hidden pt-20">
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
 
                 <div className="max-w-7xl mx-auto px-6 md:px-8 grid md:grid-cols-2 gap-12 items-center relative z-10">
