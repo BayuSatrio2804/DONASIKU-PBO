@@ -11,13 +11,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
 
 @Entity
 @Table(name = "Chat_Message")
-@Data
-@NoArgsConstructor
 public class ChatMessage {
 
     @Id
@@ -41,4 +38,87 @@ public class ChatMessage {
 
     @Column(name = "is_read")
     private Boolean isRead;
+
+    public ChatMessage() {
+    }
+
+    public ChatMessage(Integer chatMessageId, Chat chat, User sender, String message, LocalDateTime sentAt, Boolean isRead) {
+        this.chatMessageId = chatMessageId;
+        this.chat = chat;
+        this.sender = sender;
+        this.message = message;
+        this.sentAt = sentAt;
+        this.isRead = isRead;
+    }
+
+    public Integer getChatMessageId() {
+        return chatMessageId;
+    }
+
+    public void setChatMessageId(Integer chatMessageId) {
+        this.chatMessageId = chatMessageId;
+    }
+
+    public Chat getChat() {
+        return chat;
+    }
+
+    public void setChat(Chat chat) {
+        this.chat = chat;
+    }
+
+    public User getSender() {
+        return sender;
+    }
+
+    public void setSender(User sender) {
+        this.sender = sender;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public LocalDateTime getSentAt() {
+        return sentAt;
+    }
+
+    public void setSentAt(LocalDateTime sentAt) {
+        this.sentAt = sentAt;
+    }
+
+    public Boolean getIsRead() {
+        return isRead;
+    }
+
+    public void setIsRead(Boolean isRead) {
+        this.isRead = isRead;
+    }
+
+    @Override
+    public String toString() {
+        return "ChatMessage{" +
+                "chatMessageId=" + chatMessageId +
+                ", message='" + message + '\'' +
+                ", sentAt=" + sentAt +
+                ", isRead=" + isRead +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ChatMessage that = (ChatMessage) o;
+        return java.util.Objects.equals(chatMessageId, that.chatMessageId);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(chatMessageId);
+    }
 }
