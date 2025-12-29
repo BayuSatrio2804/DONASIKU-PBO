@@ -118,6 +118,38 @@ public class DonasiController {
         }
     }
 
+    // FR-04, FR-05, FR-06: Advanced filter by category and location with available
+    // status
+    @GetMapping("/search/filtered")
+    public ResponseEntity<?> filterDonasi(
+            @RequestParam(required = false) String kategori,
+            @RequestParam(required = false) String lokasi,
+            @RequestParam(required = false, defaultValue = "true") Boolean availableOnly) {
+        try {
+            List<Donasi> results = donasiService.searchDonasi(kategori, lokasi, availableOnly);
+            return ResponseEntity.ok(new FilterResponse(
+                    true,
+                    "Ditemukan " + results.size() + " donasi",
+                    results));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse(false, "Gagal filter donasi: " + e.getMessage()));
+        }
+    }
+
+    // Response DTOs
+    static class FilterResponse {
+        public boolean success;
+        public String message;
+        public List<Donasi> data;
+
+        public FilterResponse(boolean success, String message, List<Donasi> data) {
+            this.success = success;
+            this.message = message;
+            this.data = data;
+        }
+    }
+
     // FR-XX: Hapus Donasi dengan Error Handling
     @DeleteMapping("/{id}")
     public ResponseEntity<?> hapusDonasi(@PathVariable("id") Integer donasiId, @RequestParam("userId") Integer userId) {
@@ -179,6 +211,16 @@ public class DonasiController {
             return ResponseEntity.status(404).body("Error: Donasi tidak ditemukan - " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: Gagal memperbarui donasi - " + e.getMessage());
+        }
+    }
+
+    static class ErrorResponse {
+        public boolean success;
+        public String message;
+
+        public ErrorResponse(boolean success, String message) {
+            this.success = success;
+            this.message = message;
         }
     }
 }

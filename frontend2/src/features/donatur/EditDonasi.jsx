@@ -169,7 +169,7 @@ const EditDonasi = () => {
                 {imagePreview ? (
                   <div className="relative group">
                     <img
-                      src={imagePreview.startsWith('data:') || imagePreview.startsWith('http') ? imagePreview : `http://localhost:8080/storage/${imagePreview}`}
+                      src={imagePreview.startsWith('data:') || imagePreview.startsWith('http') ? imagePreview : `http://localhost:8081/storage/${imagePreview}`}
                       alt="Preview"
                       className="w-full h-64 object-cover rounded-2xl"
                     />

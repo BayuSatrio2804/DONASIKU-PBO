@@ -340,4 +340,24 @@ public class PermintaanService {
         permintaan.setUpdatedAt(LocalDateTime.now()); // Pastikan field updatedAt ada di entity atau handle error later
         permintaanRepository.save(permintaan);
     }
+
+    public List<PermintaanDonasi> searchPermintaan(String kategori, String lokasi, Boolean pendingOnly) {
+        List<PermintaanDonasi> all = this.listAll();
+        return all.stream()
+                .filter(p -> {
+                    boolean matchesKategori = (kategori == null || kategori.isBlank()) ||
+                            (p.getKategori() != null && p.getKategori().equalsIgnoreCase(kategori));
+
+                    boolean matchesLokasi = (lokasi == null || lokasi.isBlank()) ||
+                            (p.getLokasi() != null && p.getLokasi().getAlamatLengkap() != null &&
+                                    p.getLokasi().getAlamatLengkap().toLowerCase().contains(lokasi.toLowerCase()));
+
+                    boolean matchesStatus = Boolean.TRUE.equals(pendingOnly)
+                            ? ("pending".equalsIgnoreCase(p.getStatus()) || "Open".equalsIgnoreCase(p.getStatus()))
+                            : true;
+
+                    return matchesKategori && matchesLokasi && matchesStatus;
+                })
+                .toList();
+    }
 }

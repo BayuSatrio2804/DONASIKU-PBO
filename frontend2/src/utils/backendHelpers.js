@@ -4,7 +4,7 @@
  */
 
 // Base URL for storage assets
-const STORAGE_BASE_URL = 'http://localhost:8080/storage/';
+const STORAGE_BASE_URL = 'http://localhost:8081/storage/';
 
 /**
  * Get proper image URL from backend filename
@@ -22,7 +22,7 @@ export const getImageUrl = (imagePath) => {
         return imagePath;
     }
     if (imagePath.startsWith('storage/')) {
-        return `http://localhost:8080/${imagePath}`;
+        return `http://localhost:8081/${imagePath}`;
     }
     return `${STORAGE_BASE_URL}${imagePath}`;
 };
